@@ -80,14 +80,38 @@ export const cuisineService = {
 // Favorite Services
 export const favoriteService = {
   getAll: () => api.get<{ data: Favorite[] }>('/favorites'),
-  add: (vendorId: number) => api.post<{ data: Favorite }>('/favorites', { vendor_id: vendorId }),
-  remove: (favoriteId: number) => api.delete(`/favorites/${favoriteId}`),
-  toggle: (vendorId: number) => api.post<{ data: { favorite: Favorite | null; action: 'added' | 'removed' } }>('/favorites/toggle', { vendor_id: vendorId }),
+  add: (vendorId: number) => api.post<{ data: Favorite }>(`/vendors/${vendorId}/favorite`),
+  remove: (vendorId: number) => api.delete(`/vendors/${vendorId}/favorite`),
+  toggle: (vendorId: number) => api.post<{ data: { favorite: Favorite | null; action: 'added' | 'removed' } }>(`/vendors/${vendorId}/favorite`),
 };
 
 // Review Services
 export const reviewService = {
   getByVendor: (vendorId: number) => api.get<{ data: Review[] }>(`/vendors/${vendorId}/reviews`),
+  getByCuisine: async (cuisineId: number) => {
+    // Get cuisine with vendors first, then get reviews for all vendors
+    try {
+      const cuisineResponse = await cuisineService.getById(cuisineId);
+      const cuisine = cuisineResponse.data.data;
+      
+      if (cuisine.vendors && cuisine.vendors.length > 0) {
+        // Get reviews for all vendors of this cuisine
+        const reviewPromises = cuisine.vendors.map(vendor => 
+          api.get<{ data: Review[] }>(`/vendors/${vendor.id}/reviews`)
+        );
+        
+        const reviewResponses = await Promise.all(reviewPromises);
+        const allReviews = reviewResponses.flatMap(response => response.data.data || []);
+        
+        return { data: { data: allReviews } };
+      }
+      
+      return { data: { data: [] } };
+    } catch (error) {
+      console.error('Error fetching cuisine reviews:', error);
+      return { data: { data: [] } };
+    }
+  },
   create: (data: { vendor_id: number; rating: number; comment: string }) =>
     api.post<{ data: Review }>('/reviews', data),
   update: (id: number, data: { rating: number; comment: string }) =>

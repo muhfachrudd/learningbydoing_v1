@@ -56,10 +56,14 @@ export default function CuisineDetailScreen() {
   };
 
   const toggleFavorite = async () => {
-    if (!cuisine) return;
+    if (!cuisine || !cuisine.vendors || cuisine.vendors.length === 0) return;
+    
+    // For now, we'll use the first vendor as representative
+    // In the future, you might want to implement cuisine-level favorites
+    const firstVendor = cuisine.vendors[0];
     
     try {
-      const response = await favoriteService.toggle(cuisine.id);
+      const response = await favoriteService.toggle(firstVendor.id);
       setIsFavorite(response.data.data.action === 'added');
       Alert.alert(
         'Berhasil',
@@ -76,20 +80,12 @@ export default function CuisineDetailScreen() {
     
     try {
       await Share.share({
-        message: `Check out ${cuisine.name} at ${cuisine.vendor?.name}! Only ${formatPrice(cuisine.price)}`,
+        message: `Check out ${cuisine.name} - ${cuisine.description}. From ${cuisine.origin_region}!`,
         title: cuisine.name,
       });
     } catch (error) {
       console.error('Error sharing:', error);
     }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(price);
   };
 
   const renderStars = (rating: number) => {
@@ -177,7 +173,7 @@ export default function CuisineDetailScreen() {
       {/* Content */}
       <View style={styles.content}>
         <Text style={styles.cuisineName}>{cuisine.name}</Text>
-        <Text style={styles.price}>{formatPrice(cuisine.price)}</Text>
+        <Text style={styles.categoryText}>{cuisine.category}</Text>
         
         {cuisine.description && (
           <>
@@ -186,17 +182,34 @@ export default function CuisineDetailScreen() {
           </>
         )}
 
-        {/* Vendor Info */}
-        {cuisine.vendor && (
+        {cuisine.origin_region && (
           <>
-            <Text style={styles.sectionTitle}>Vendor</Text>
-            <View style={styles.vendorInfo}>
-              <Text style={styles.vendorName}>{cuisine.vendor.name}</Text>
-              <Text style={styles.vendorAddress}>{cuisine.vendor.address}</Text>
-              {cuisine.vendor.phone && (
-                <Text style={styles.vendorPhone}>{cuisine.vendor.phone}</Text>
-              )}
-            </View>
+            <Text style={styles.sectionTitle}>Asal Daerah</Text>
+            <Text style={styles.originRegion}>{cuisine.origin_region}</Text>
+          </>
+        )}
+
+        {/* Vendors */}
+        {cuisine.vendors && cuisine.vendors.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Vendor Tersedia ({cuisine.vendors.length})</Text>
+            {cuisine.vendors.map((vendor) => (
+              <TouchableOpacity 
+                key={vendor.id} 
+                style={styles.vendorCard}
+                onPress={() => router.push(`/vendor/${vendor.id}` as any)}
+              >
+                <Text style={styles.vendorName}>{vendor.name}</Text>
+                <Text style={styles.vendorAddress}>{vendor.address}</Text>
+                <Text style={styles.vendorPriceRange}>Rentang Harga: {vendor.price_range}</Text>
+                {vendor.rating && (
+                  <View style={styles.vendorRating}>
+                    <FontAwesome name="star" size={14} color="#FFD700" />
+                    <Text style={styles.ratingText}>{vendor.rating.toFixed(1)}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
           </>
         )}
 
@@ -304,11 +317,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  price: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#e74c3c',
+  categoryText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#007AFF',
     marginBottom: 20,
+    textTransform: 'capitalize',
   },
   sectionTitle: {
     fontSize: 18,
@@ -320,6 +334,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#666',
+  },
+  originRegion: {
+    fontSize: 16,
+    color: '#333',
+    fontStyle: 'italic',
+  },
+  vendorCard: {
+    backgroundColor: '#f8f9fa',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
   },
   vendorInfo: {
     backgroundColor: '#f8f9fa',
@@ -335,6 +362,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 3,
+  },
+  vendorPriceRange: {
+    fontSize: 14,
+    color: '#007AFF',
+    marginBottom: 5,
+  },
+  vendorRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    marginLeft: 5,
+    fontSize: 14,
+    color: '#333',
   },
   vendorPhone: {
     fontSize: 14,
