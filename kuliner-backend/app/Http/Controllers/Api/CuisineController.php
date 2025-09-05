@@ -35,7 +35,10 @@ class CuisineController extends Controller
             $query->where('origin_region', 'like', "%{$request->region}%");
         }
         
-        $cuisines = $query->paginate($request->get('per_page', 15));
+        $cuisines = $query->get()->map(function ($cuisine) {
+            $cuisine->image_url = $cuisine->photo ? asset('storage/' . $cuisine->photo) : null;
+            return $cuisine;
+        });
         
         return response()->json([
             'success' => true,
@@ -56,6 +59,9 @@ class CuisineController extends Controller
                 'message' => 'Cuisine not found'
             ], 404);
         }
+        
+        // Add image URL
+        $cuisine->image_url = $cuisine->photo ? asset('storage/' . $cuisine->photo) : null;
         
         return response()->json([
             'success' => true,

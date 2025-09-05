@@ -30,16 +30,24 @@ export default function HomeScreen() {
 
   const fetchData = async () => {
     try {
+      console.log('Fetching data from API...');
       const [vendorsResponse, cuisinesResponse] = await Promise.all([
         vendorService.getAll(),
         cuisineService.getAll()
       ]);
       
+      console.log('Vendors response:', vendorsResponse.data);
+      console.log('Cuisines response:', cuisinesResponse.data);
+      
       setVendors(vendorsResponse.data.data || []);
       setFeaturedCuisines(cuisinesResponse.data.data?.slice(0, 6) || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching data:', error);
-      Alert.alert('Error', 'Gagal memuat data');
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+      Alert.alert('Error', 'Gagal memuat data. Pastikan server backend berjalan.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -89,19 +97,11 @@ export default function HomeScreen() {
       )}
       <View style={styles.featuredContent}>
         <Text style={styles.cuisineName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.cuisineVendor} numberOfLines={1}>{item.vendor?.name}</Text>
-        <Text style={styles.cuisinePrice}>{formatPrice(item.price)}</Text>
+        <Text style={styles.cuisineVendor} numberOfLines={1}>{item.category}</Text>
+        <Text style={styles.cuisinePrice}>{item.origin_region}</Text>
       </View>
     </TouchableOpacity>
   );
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
 
   if (loading) {
     return (
