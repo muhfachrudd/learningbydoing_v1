@@ -26,6 +26,7 @@ Route::post('/login', [AuthController::class, 'login']);
 // Public cuisine and vendor routes
 Route::get('/cuisines', [CuisineController::class, 'index']);
 Route::get('/cuisines/{id}', [CuisineController::class, 'show']);
+Route::get('/cuisines/{cuisineId}/vendors', [VendorController::class, 'getByCuisine']);
 Route::get('/vendors', [VendorController::class, 'index']);
 Route::get('/vendors/{id}', [VendorController::class, 'show']);
 Route::get('/vendors/{id}/reviews', [ReviewController::class, 'getVendorReviews']);
