@@ -46,6 +46,7 @@ class CuisineForm
                 FileUpload::make('photo')
                     ->label('Photo')
                     ->image()
+                    ->disk('public')
                     ->directory('cuisines')
                     ->maxSize(1024)
                     ->columnSpanFull(),

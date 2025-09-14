@@ -69,6 +69,7 @@ class VendorForm
                 FileUpload::make('photo')
                     ->label('Photo')
                     ->image()
+                    ->disk('public')
                     ->directory('vendors')
                     ->maxSize(1024)
                     ->columnSpanFull(),
