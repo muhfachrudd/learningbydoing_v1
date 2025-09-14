@@ -1,18 +1,46 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Tabs } from 'expo-router';
+import { Image, View } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
+// Custom TabBar Icon using assets images
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
+  source: any;
+  focused: boolean;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return (
+    <View style={{ 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: 32,
+      height: 32,
+    }}>
+      <Image 
+        source={props.source}
+        style={{ 
+          width: 26, 
+          height: 26, 
+          tintColor: props.focused ? '#D4761A' : '#999',
+        }}
+        resizeMode="contain"
+      />
+      {props.focused && (
+        <View 
+          style={{
+            width: 24,
+            height: 2,
+            backgroundColor: '#D4761A',
+            marginTop: 2,
+            borderRadius: 1,
+            position: 'absolute',
+            bottom: -6,
+          }}
+        />
+      )}
+    </View>
+  );
 }
 
 export default function TabLayout() {
@@ -21,56 +49,80 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].tabIconDefault,
+        tabBarActiveTintColor: "#D4761A",
+        tabBarInactiveTintColor: "#999", 
         tabBarStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
-          elevation: 10,
+          elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 10,
-          paddingBottom: 5,
-          paddingTop: 5,
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          paddingBottom: 12,
+          paddingTop: 12,
+          height: 68,
         },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
+        tabBarShowLabel: false, // Hide labels completely
+        tabBarIconStyle: {
+          marginTop: 0,
+          width: 32,
+          height: 32,
         },
         // Disable the header completely
         headerShown: false,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: "",
           headerShown: false,
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon 
+              source={require('../../assets/images/nav/home.png')} 
+              focused={focused} 
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="vendors"
         options={{
-          title: 'Vendor',
+          title: "",
           headerShown: false,
-          tabBarIcon: ({ color }) => <TabBarIcon name="cutlery" color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon 
+              source={require('../../assets/images/nav/vendor.png')} 
+              focused={focused} 
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favorit',
+          title: "",
           headerShown: false,
-          tabBarIcon: ({ color }) => <TabBarIcon name="heart" color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon 
+              source={require('../../assets/images/nav/like.png')} 
+              focused={focused} 
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: "",
           headerShown: false,
-          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon 
+              source={require('../../assets/images/nav/profile.png')} 
+              focused={focused} 
+            />
+          ),
         }}
       />
     </Tabs>
