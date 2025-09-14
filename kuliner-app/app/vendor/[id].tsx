@@ -18,6 +18,11 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { vendorService, cuisineService, Vendor, Cuisine } from '@/services/apiServices';
 
+// Export options to hide header
+export const options = {
+  headerShown: false,
+};
+
 export default function VendorDetailScreen() {
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);

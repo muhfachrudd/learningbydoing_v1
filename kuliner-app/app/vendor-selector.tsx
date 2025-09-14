@@ -107,7 +107,7 @@ export default function VendorSelectorScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <FontAwesome name="arrow-left" size={20} color="#333" />
+          <FontAwesome name="arrow-left" size={16} color="#333" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Pilih Vendor</Text>
@@ -167,6 +167,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 15,
+    fontWeight: 'semibold',
   },
   headerContent: {
     flex: 1,

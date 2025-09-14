@@ -85,9 +85,21 @@ export default function HomeScreen() {
     fetchData();
   };
 
-  // Filter cuisines based on selected vendor and category
+  // Filter cuisines based on selected vendor, category, and search query
   const getFilteredCuisines = () => {
     let filtered = cuisines;
+    
+    // Filter by search query first
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(cuisine => 
+        cuisine.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cuisine.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cuisine.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cuisine.vendors?.some(vendor => 
+          vendor.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    }
     
     // Filter by vendor only if one is selected
     if (selectedVendor) {
@@ -180,11 +192,19 @@ export default function HomeScreen() {
             <FontAwesome name="search" size={16} color="#666" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search coffee"
+              placeholder="Cari menu makanan atau minuman..."
               placeholderTextColor="#999"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity 
+                style={styles.clearButton}
+                onPress={() => setSearchQuery('')}
+              >
+                <FontAwesome name="times-circle" size={16} color="#999" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -242,8 +262,18 @@ export default function HomeScreen() {
               <View style={styles.emptyContainer}>
                 <FontAwesome name="cutlery" size={50} color="#D4761A" />
                 <Text style={styles.emptyText}>
-                  {selectedVendor ? `Tidak ada menu dari ${selectedVendor.name}` : 'Belum ada menu tersedia'}
+                  {searchQuery.trim() 
+                    ? `Tidak ada hasil untuk "${searchQuery}"` 
+                    : selectedVendor 
+                      ? `Tidak ada menu dari ${selectedVendor.name}` 
+                      : 'Belum ada menu tersedia'
+                  }
                 </Text>
+                {searchQuery.trim() && (
+                  <Text style={styles.emptySubtext}>
+                    Coba kata kunci lain atau hapus filter pencarian
+                  </Text>
+                )}
               </View>
             }
           />
@@ -304,6 +334,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#333',
+  },
+  clearButton: {
+    marginLeft: 10,
+    padding: 5,
   },
   promoBanner: {
     marginHorizontal: 20,
@@ -476,5 +510,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#666',
+  },
+  emptySubtext: {
+    marginTop: 5,
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
   },
 });
