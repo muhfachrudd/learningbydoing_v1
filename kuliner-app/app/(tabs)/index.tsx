@@ -7,7 +7,9 @@ import {
   Alert,
   RefreshControl,
   Dimensions,
-  ScrollView
+  ScrollView,
+  TextInput,
+  SafeAreaView
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -25,8 +27,12 @@ export default function HomeScreen() {
   const [featuredCuisines, setFeaturedCuisines] = useState<Cuisine[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All Coffee');
   const colorScheme = useColorScheme();
   const router = useRouter();
+
+  const categories = ['All Coffee', 'Machiato', 'Latte', 'Americano'];
 
   const fetchData = async () => {
     try {
@@ -63,42 +69,38 @@ export default function HomeScreen() {
     fetchData();
   };
 
-  const renderVendorCard = ({ item }: { item: Vendor }) => (
-    <TouchableOpacity style={styles.card}>
-      {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.cardImage} />
-      ) : (
-        <View style={[styles.cardImage, styles.placeholderImage]}>
-          <FontAwesome name="cutlery" size={30} color={Colors[colorScheme ?? 'light'].tabIconDefault} />
-        </View>
-      )}
-      <View style={styles.cardContent}>
-        <Text style={styles.vendorName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.vendorAddress} numberOfLines={1}>{item.address}</Text>
-        <View style={styles.ratingContainer}>
-          <FontAwesome name="star" size={12} color="#FFD700" />
-          <Text style={styles.rating}>{item.rating ? item.rating.toFixed(1) : '0.0'}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
 
-  const renderFeaturedCuisine = ({ item }: { item: Cuisine }) => (
+
+  const renderCoffeeCard = ({ item }: { item: Cuisine }) => (
     <TouchableOpacity 
-      style={styles.featuredCard}
+      style={styles.coffeeCard}
       onPress={() => router.push(`/cuisine/${item.id}` as any)}
     >
-      {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.featuredImage} />
-      ) : (
-        <View style={[styles.featuredImage, styles.placeholderImage]}>
-          <FontAwesome name="cutlery" size={20} color={Colors[colorScheme ?? 'light'].tabIconDefault} />
+      <View style={styles.coffeeImageContainer}>
+        {item.image_url ? (
+          <Image source={{ uri: item.image_url }} style={styles.coffeeImage} />
+        ) : (
+          <View style={[styles.coffeeImage, styles.placeholderImage]}>
+            <FontAwesome name="coffee" size={30} color="#8B4513" />
+          </View>
+        )}
+        <View style={styles.ratingBadge}>
+          <FontAwesome name="star" size={10} color="#FFD700" />
+          <Text style={styles.ratingText}>4.8</Text>
         </View>
-      )}
-      <View style={styles.featuredContent}>
-        <Text style={styles.cuisineName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.cuisineVendor} numberOfLines={1}>{item.category}</Text>
-        <Text style={styles.cuisinePrice}>{item.origin_region}</Text>
+        <TouchableOpacity style={styles.favoriteButton}>
+          <FontAwesome name="heart-o" size={16} color="#fff" />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.coffeeContent}>
+        <Text style={styles.coffeeName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.coffeeDescription} numberOfLines={1}>{item.category || 'Deep Foam'}</Text>
+        <View style={styles.priceContainer}>
+          <Text style={styles.coffeePrice}>$ 4.53</Text>
+          <TouchableOpacity style={styles.addButton}>
+            <FontAwesome name="plus" size={12} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -112,162 +114,300 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Kuliner Terdekat</Text>
-          <Text style={styles.subtitle}>Temukan kuliner favoritmu</Text>
+        {/* Location Header */}
+        <View style={styles.locationHeader}>
+          <Text style={styles.locationLabel}>Location</Text>
+          <View style={styles.locationRow}>
+            <Text style={styles.locationText}>Bilzen, Tanjungbalai</Text>
+            <FontAwesome name="chevron-down" size={12} color="#666" />
+          </View>
         </View>
 
-        {/* Featured Cuisines */}
-        {featuredCuisines.length > 0 && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Rekomendasi Kuliner</Text>
-            </View>
-            <FlatList
-              data={featuredCuisines}
-              renderItem={renderFeaturedCuisine}
-              keyExtractor={(item) => `cuisine-${item.id}`}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.featuredList}
+        {/* Profile Icon */}
+        <TouchableOpacity style={styles.profileIcon}>
+          <FontAwesome name="user-circle" size={32} color="#D4761A" />
+        </TouchableOpacity>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <FontAwesome name="search" size={16} color="#666" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search coffee"
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
-          </>
-        )}
-
-        {/* Vendors */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Vendor Terpopuler</Text>
+          </View>
         </View>
-        
-        <FlatList
-          data={vendors}
-          renderItem={renderVendorCard}
-          keyExtractor={(item) => `vendor-${item.id}`}
-          numColumns={2}
-          scrollEnabled={false}
-          contentContainerStyle={styles.listContainer}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <FontAwesome name="cutlery" size={50} color={Colors[colorScheme ?? 'light'].tabIconDefault} />
-              <Text style={styles.emptyText}>Belum ada vendor kuliner</Text>
+
+        {/* Promo Banner */}
+        <View style={styles.promoBanner}>
+          <View style={styles.promoContent}>
+            <View style={styles.promoTag}>
+              <Text style={styles.promoTagText}>Promo</Text>
             </View>
-          }
-        />
+            <Text style={styles.promoTitle}>Buy one get{'\n'}one FREE</Text>
+          </View>
+          <Image 
+            source={{ uri: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=120&fit=crop' }}
+            style={styles.promoImage}
+          />
+        </View>
+
+        {/* Category Filter */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryContainer}
+        >
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryButton,
+                selectedCategory === category && styles.categoryButtonActive
+              ]}
+              onPress={() => setSelectedCategory(category)}
+            >
+              <Text
+                style={[
+                  styles.categoryButtonText,
+                  selectedCategory === category && styles.categoryButtonTextActive
+                ]}
+              >
+                {category}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Coffee Grid */}
+        <View style={styles.coffeeGrid}>
+          <FlatList
+            data={featuredCuisines}
+            renderItem={renderCoffeeCard}
+            keyExtractor={(item) => `cuisine-${item.id}`}
+            numColumns={2}
+            scrollEnabled={false}
+            contentContainerStyle={styles.gridContainer}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <FontAwesome name="coffee" size={50} color="#D4761A" />
+                <Text style={styles.emptyText}>No coffee available</Text>
+              </View>
+            }
+          />
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fff',
   },
-  header: {
-    padding: 20,
-    paddingBottom: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    opacity: 0.7,
-  },
-  sectionHeader: {
+  locationHeader: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 5,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  featuredList: {
-    paddingLeft: 20,
-  },
-  featuredCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    marginRight: 15,
-    width: 180,
-    boxShadow: '0px 2px 3.84px rgba(0, 0, 0, 0.1)',
-    elevation: 5,
-  },
-  featuredImage: {
-    width: '100%',
-    height: 120,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  featuredContent: {
-    padding: 12,
-  },
-  cuisineName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  cuisineVendor: {
+  locationLabel: {
     fontSize: 12,
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  cuisinePrice: {
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#e74c3c',
+    fontWeight: '600',
+    color: '#000',
+    marginRight: 5,
   },
-  listContainer: {
-    padding: 10,
+  profileIcon: {
+    position: 'absolute',
+    top: 10,
+    right: 20,
+    zIndex: 1,
   },
-  card: {
-    backgroundColor: 'white',
+  searchContainer: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
     borderRadius: 12,
-    margin: 5,
-    width: CARD_WIDTH,
-    boxShadow: '0px 2px 3.84px rgba(0, 0, 0, 0.1)',
-    elevation: 5,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
   },
-  cardImage: {
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  promoBanner: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: '#D4761A',
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  promoContent: {
+    flex: 1,
+  },
+  promoTag: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  promoTagText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  promoTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    lineHeight: 28,
+  },
+  promoImage: {
+    width: 100,
+    height: 80,
+    borderRadius: 12,
+  },
+  categoryContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  categoryButton: {
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  categoryButtonActive: {
+    backgroundColor: '#D4761A',
+  },
+  categoryButtonText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  categoryButtonTextActive: {
+    color: '#fff',
+  },
+  coffeeGrid: {
+    paddingHorizontal: 20,
+  },
+  gridContainer: {
+    paddingBottom: 20,
+  },
+  coffeeCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    margin: 5,
+    width: (width - 50) / 2,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+  },
+  coffeeImageContainer: {
+    position: 'relative',
+  },
+  coffeeImage: {
     width: '100%',
     height: 120,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
   placeholderImage: {
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cardContent: {
+  ratingBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  ratingText: {
+    color: '#fff',
+    fontSize: 10,
+    marginLeft: 3,
+    fontWeight: '600',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    padding: 6,
+    borderRadius: 12,
+  },
+  coffeeContent: {
     padding: 12,
   },
-  vendorName: {
+  coffeeName: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#333',
     marginBottom: 4,
   },
-  vendorAddress: {
+  coffeeDescription: {
     fontSize: 12,
     color: '#666',
     marginBottom: 8,
   },
-  ratingContainer: {
+  priceContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  rating: {
-    fontSize: 12,
-    marginLeft: 4,
-    color: '#666',
+  coffeePrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  addButton: {
+    backgroundColor: '#D4761A',
+    padding: 8,
+    borderRadius: 8,
   },
   emptyContainer: {
     flex: 1,
