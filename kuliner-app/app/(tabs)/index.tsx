@@ -248,18 +248,12 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.promoBanner}>
-          <View style={styles.promoContent}>
-            <View style={styles.promoTag}>
-              <Text style={styles.promoTagText}>Promo</Text>
-            </View>
-            <Text style={styles.promoTitle}>Buy one get{"\n"}one FREE</Text>
-          </View>
+        <View>
           <Image
             source={{
               uri: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=120&fit=crop",
             }}
-            style={styles.promoImage}
+            style={styles.promoBanner}
           />
         </View>
 
@@ -349,7 +343,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "transparent",
-    flex: 1, 
+    flex: 1,
     marginRight: 10,
   },
   locationText: {
@@ -357,7 +351,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginLeft: 6,
     opacity: 0.8,
-    flexShrink: 1, 
+    flexShrink: 1,
   },
   headerLocationText: {
     fontSize: 14,
@@ -399,7 +393,8 @@ const styles = StyleSheet.create({
   promoBanner: {
     marginHorizontal: 20,
     marginBottom: 20,
-    backgroundColor: "#D4761A",
+    width: "89%",
+    height: 130,
     borderRadius: 16,
     padding: 20,
     flexDirection: "row",
@@ -430,7 +425,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   promoImage: {
-    width: 100,
+    width: 280,
     height: 80,
     borderRadius: 12,
   },
