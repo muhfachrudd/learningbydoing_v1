@@ -12,7 +12,7 @@ import {
   SafeAreaView
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -24,15 +24,17 @@ const CARD_WIDTH = (width - 30) / 2;
 
 export default function HomeScreen() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [featuredCuisines, setFeaturedCuisines] = useState<Cuisine[]>([]);
+  const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Coffee');
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('All Menu');
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const params = useLocalSearchParams();
 
-  const categories = ['All Coffee', 'Machiato', 'Latte', 'Americano'];
+  const categories = ['All Menu', 'Makanan', 'Minuman', 'Snack'];
 
   const fetchData = async () => {
     try {
@@ -45,8 +47,11 @@ export default function HomeScreen() {
       console.log('Vendors response:', vendorsResponse.data);
       console.log('Cuisines response:', cuisinesResponse.data);
       
-      setVendors(vendorsResponse.data.data || []);
-      setFeaturedCuisines(cuisinesResponse.data.data?.slice(0, 6) || []);
+      const vendorsList = vendorsResponse.data.data || [];
+      setVendors(vendorsList);
+      setCuisines(cuisinesResponse.data.data || []);
+      
+      // Don't auto-select vendor, show all by default
     } catch (error: any) {
       console.error('Error fetching data:', error);
       if (error.response) {
@@ -64,9 +69,43 @@ export default function HomeScreen() {
     fetchData();
   }, []);
 
+  // Handle vendor selection from navigation params
+  useEffect(() => {
+    if (params.selectedVendorId && vendors.length > 0) {
+      const vendorId = parseInt(params.selectedVendorId as string);
+      const vendor = vendors.find(v => v.id === vendorId);
+      if (vendor) {
+        setSelectedVendor(vendor);
+      }
+    }
+  }, [params.selectedVendorId, vendors]);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchData();
+  };
+
+  // Filter cuisines based on selected vendor and category
+  const getFilteredCuisines = () => {
+    let filtered = cuisines;
+    
+    // Filter by vendor only if one is selected
+    if (selectedVendor) {
+      filtered = filtered.filter(cuisine => 
+        cuisine.vendors?.some(vendor => vendor.id === selectedVendor.id) || 
+        selectedVendor.cuisine_id === cuisine.id
+      );
+    }
+    // If no vendor selected, show all cuisines
+    
+    // Filter by category (if not "All Menu")
+    if (selectedCategory !== 'All Menu') {
+      filtered = filtered.filter(cuisine => 
+        cuisine.category?.toLowerCase().includes(selectedCategory.toLowerCase())
+      );
+    }
+    
+    return filtered;
   };
 
 
@@ -94,13 +133,8 @@ export default function HomeScreen() {
       </View>
       <View style={styles.coffeeContent}>
         <Text style={styles.coffeeName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.coffeeDescription} numberOfLines={1}>{item.category || 'Deep Foam'}</Text>
-        <View style={styles.priceContainer}>
-          <Text style={styles.coffeePrice}>$ 4.53</Text>
-          <TouchableOpacity style={styles.addButton}>
-            <FontAwesome name="plus" size={12} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.coffeeDescription} numberOfLines={2}>{item.description || item.category}</Text>
+        <Text style={styles.coffeeOrigin} numberOfLines={1}>{item.origin_region}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -121,13 +155,18 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Location Header */}
+        {/* Vendor Selector Header */}
         <View style={styles.locationHeader}>
-          <Text style={styles.locationLabel}>Location</Text>
-          <View style={styles.locationRow}>
-            <Text style={styles.locationText}>Bilzen, Tanjungbalai</Text>
-            <FontAwesome name="chevron-down" size={12} color="#666" />
-          </View>
+          <Text style={styles.locationLabel}>Vendor</Text>
+          <TouchableOpacity 
+            style={styles.locationRow}
+            onPress={() => router.push('/vendor-selector' as any)}
+          >
+            <Text style={styles.locationText}>
+              {selectedVendor ? selectedVendor.name : 'Semua Vendor'}
+            </Text>
+            <FontAwesome name="chevron-down" size={10} color="#666" />
+          </TouchableOpacity>
         </View>
 
         {/* Profile Icon */}
@@ -190,10 +229,10 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        {/* Coffee Grid */}
+        {/* Menu Grid */}
         <View style={styles.coffeeGrid}>
           <FlatList
-            data={featuredCuisines}
+            data={getFilteredCuisines()}
             renderItem={renderCoffeeCard}
             keyExtractor={(item) => `cuisine-${item.id}`}
             numColumns={2}
@@ -201,8 +240,10 @@ export default function HomeScreen() {
             contentContainerStyle={styles.gridContainer}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <FontAwesome name="coffee" size={50} color="#D4761A" />
-                <Text style={styles.emptyText}>No coffee available</Text>
+                <FontAwesome name="cutlery" size={50} color="#D4761A" />
+                <Text style={styles.emptyText}>
+                  {selectedVendor ? `Tidak ada menu dari ${selectedVendor.name}` : 'Belum ada menu tersedia'}
+                </Text>
               </View>
             }
           />
@@ -302,6 +343,30 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 12,
   },
+  vendorContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  vendorButton: {
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 12,
+    minWidth: 80,
+  },
+  vendorButtonActive: {
+    backgroundColor: '#D4761A',
+  },
+  vendorButtonText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  vendorButtonTextActive: {
+    color: '#fff',
+  },
   categoryContainer: {
     paddingHorizontal: 20,
     marginBottom: 20,
@@ -392,23 +457,15 @@ const styles = StyleSheet.create({
   coffeeDescription: {
     fontSize: 12,
     color: '#666',
-    marginBottom: 8,
+    marginBottom: 4,
+    lineHeight: 16,
   },
-  priceContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  coffeeOrigin: {
+    fontSize: 11,
+    color: '#D4761A',
+    fontWeight: '500',
   },
-  coffeePrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  addButton: {
-    backgroundColor: '#D4761A',
-    padding: 8,
-    borderRadius: 8,
-  },
+
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',

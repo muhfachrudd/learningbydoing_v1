@@ -20,7 +20,7 @@ import { vendorService, Vendor } from '@/services/apiServices';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 30) / 2;
 
-export default function VendorsScreen() {
+export default function VendorSelectorScreen() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,13 +51,23 @@ export default function VendorsScreen() {
     fetchVendors();
   };
 
+  const handleVendorSelect = (vendor: Vendor) => {
+    // Navigate back to home with selected vendor
+    router.push({
+      pathname: '/(tabs)/' as any,
+      params: { selectedVendorId: vendor.id, selectedVendorName: vendor.name }
+    });
+  };
+
+  const handleShowAll = () => {
+    // Navigate back to home showing all vendors
+    router.push('/(tabs)/' as any);
+  };
+
   const renderVendorCard = ({ item }: { item: Vendor }) => (
     <TouchableOpacity 
       style={styles.vendorCard}
-      onPress={() => {
-        // Navigate to vendor detail page
-        router.push(`/vendor/${item.id}` as any);
-      }}
+      onPress={() => handleVendorSelect(item)}
     >
       {item.image_url ? (
         <Image source={{ uri: item.image_url }} style={styles.vendorImage} />
@@ -74,7 +84,7 @@ export default function VendorsScreen() {
             <FontAwesome name="star" size={14} color="#FFD700" />
             <Text style={styles.ratingText}>{item.rating ? item.rating.toFixed(1) : '4.5'}</Text>
           </View>
-          <Text style={styles.vendorType}>Lihat Detail</Text>
+          <Text style={styles.selectText}>Pilih</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -93,9 +103,32 @@ export default function VendorsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Vendors</Text>
-        <Text style={styles.headerSubtitle}>Klik untuk melihat detail vendor</Text>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <FontAwesome name="arrow-left" size={20} color="#333" />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Pilih Vendor</Text>
+          <Text style={styles.headerSubtitle}>Pilih vendor untuk melihat menunya</Text>
+        </View>
       </View>
+
+      {/* Show All Option */}
+      <TouchableOpacity 
+        style={styles.showAllCard}
+        onPress={handleShowAll}
+      >
+        <View style={styles.showAllContent}>
+          <FontAwesome name="th-large" size={24} color="#D4761A" />
+          <View style={styles.showAllText}>
+            <Text style={styles.showAllTitle}>Semua Vendor</Text>
+            <Text style={styles.showAllSubtitle}>Tampilkan menu dari semua vendor</Text>
+          </View>
+          <FontAwesome name="chevron-right" size={16} color="#666" />
+        </View>
+      </TouchableOpacity>
 
       <FlatList
         data={vendors}
@@ -124,19 +157,59 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 15,
     backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerContent: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 5,
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#666',
+    marginTop: 2,
+  },
+  showAllCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginVertical: 10,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+  },
+  showAllContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+  },
+  showAllText: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  showAllTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  showAllSubtitle: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   listContainer: {
     padding: 10,
@@ -194,8 +267,8 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: '600',
   },
-  vendorType: {
-    fontSize: 10,
+  selectText: {
+    fontSize: 12,
     color: '#D4761A',
     backgroundColor: '#FFF3E6',
     paddingHorizontal: 8,
