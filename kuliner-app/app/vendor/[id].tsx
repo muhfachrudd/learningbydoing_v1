@@ -17,6 +17,9 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { vendorService, cuisineService, Vendor, Cuisine } from '@/services/apiServices';
+import { dummyService } from '@/services/dummyData';
+
+const USE_DUMMY_DATA = true;
 
 // Export options to hide header
 export const options = {
@@ -39,21 +42,40 @@ export default function VendorDetailScreen() {
       const vendorId = parseInt(id as string);
       console.log('Fetching vendor data for ID:', vendorId);
       
-      const [vendorResponse, cuisinesResponse] = await Promise.all([
-        vendorService.getById(vendorId),
-        cuisineService.getAll()
-      ]);
-      
-      console.log('Vendor response:', vendorResponse.data);
-      setVendor(vendorResponse.data.data);
-      
-      // Filter cuisines for this vendor
-      const allCuisines = cuisinesResponse.data.data || [];
-      const vendorCuisines = allCuisines.filter(cuisine => 
-        cuisine.vendors?.some(v => v.id === vendorId) ||
-        vendorResponse.data.data.cuisine_id === cuisine.id
-      );
-      setCuisines(vendorCuisines);
+      if (USE_DUMMY_DATA) {
+        console.log('Using DUMMY DATA for Vendor Detail');
+        const [vendorResponse, cuisinesResponse] = await Promise.all([
+          dummyService.getVendorById(vendorId),
+          dummyService.getAllCuisines()
+        ]);
+
+        console.log('Vendor response:', vendorResponse.data);
+        setVendor(vendorResponse.data.data || null);
+        
+        // Filter cuisines for this vendor
+        const allCuisines = cuisinesResponse.data.data || [];
+        const vendorCuisines = allCuisines.filter(cuisine => 
+          cuisine.vendors?.some(v => v.id === vendorId) ||
+          vendorResponse.data.data?.cuisine_id === cuisine.id
+        );
+        setCuisines(vendorCuisines);
+      } else {
+        const [vendorResponse, cuisinesResponse] = await Promise.all([
+          vendorService.getById(vendorId),
+          cuisineService.getAll()
+        ]);
+        
+        console.log('Vendor response:', vendorResponse.data);
+        setVendor(vendorResponse.data.data);
+        
+        // Filter cuisines for this vendor
+        const allCuisines = cuisinesResponse.data.data || [];
+        const vendorCuisines = allCuisines.filter(cuisine => 
+          cuisine.vendors?.some(v => v.id === vendorId) ||
+          vendorResponse.data.data.cuisine_id === cuisine.id
+        );
+        setCuisines(vendorCuisines);
+      }
       
     } catch (error: any) {
       console.error('Error fetching vendor data:', error);
@@ -244,7 +266,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   imageContainer: {
-    height: 200,
+    height: 300,
     backgroundColor: '#f0f0f0',
   },
   vendorImage: {

@@ -29,8 +29,29 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const colorScheme = useColorScheme();
 
+const USE_DUMMY_DATA = true;
+
   const fetchProfile = async () => {
     try {
+      if (USE_DUMMY_DATA) {
+        // Mock data
+        setUser({
+          id: 1,
+          name: "Budi Santoso",
+          email: "budi@example.com",
+          avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=2680&auto=format&fit=crop",
+          email_verified_at: new Date().toISOString(),
+          created_at: new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString(),
+        } as User);
+        
+        setStats({
+          totalFavorites: 12,
+          totalReviews: 5,
+          totalReviewLikes: 25,
+        });
+        return;
+      }
+
       const userResponse = await userService.getProfile();
       const statsResponse = await userService.getStats();
 

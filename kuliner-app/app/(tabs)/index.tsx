@@ -1,73 +1,59 @@
-import React, { useState, useEffect } from "react";
-import {
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  Alert,
-  RefreshControl,
-  Dimensions,
-  ScrollView,
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { 
+  StyleSheet, 
+  TouchableOpacity, 
+  FlatList, 
+  Image, 
+  Dimensions, 
   TextInput,
-  SafeAreaView,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { FontAwesome } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
+  RefreshControl,
+  Alert
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
+import { Text, View } from '@/components/Themed';
+import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
+import { 
+  vendorService, 
+  cuisineService, 
+  Vendor, 
+  Cuisine 
+} from '@/services/apiServices';
+import { DUMMY_VENDORS, DUMMY_CUISINES } from '@/services/dummyData';
 
-import { Text, View } from "@/components/Themed";
-import { useColorScheme } from "@/components/useColorScheme";
-import {
-  vendorService,
-  cuisineService,
-  Vendor,
-  Cuisine,
-} from "@/services/apiServices";
+const USE_DUMMY_DATA = true;
 
-const { width } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.75; // Card akan mengambil 75% dari lebar layar
-const CARD_HEIGHT = 280;
-
-export default function HomeScreen() {
+const HomeScreen = () => {
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  
+  // State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState("All Menu");
-  const colorScheme = useColorScheme();
-  const router = useRouter();
-  const params = useLocalSearchParams();
-
-  const categories = ["All Menu", "Makanan", "Minuman", "Snack"];
 
   const fetchData = async () => {
     try {
-      console.log("Fetching data from API...");
-      const [vendorsResponse, cuisinesResponse] = await Promise.all([
-        vendorService.getAll(),
-        cuisineService.getAll(),
-      ]);
-
-      console.log("Vendors response:", vendorsResponse.data);
-      console.log("Cuisines response:", cuisinesResponse.data);
-
-      const vendorsList = vendorsResponse.data.data || [];
-      setVendors(vendorsList);
-      setCuisines(cuisinesResponse.data.data || []);
-
-      // Don't auto-select vendor, show all by default
-    } catch (error: any) {
-      console.error("Error fetching data:", error);
-      if (error.response) {
-        console.error("Error response:", error.response.data);
-        console.error("Error status:", error.response.status);
+      if (USE_DUMMY_DATA) {
+        // Simulate network delay for skeleton demo
+        await new Promise(resolve => setTimeout(resolve, 800)); 
+        setVendors(DUMMY_VENDORS);
+        setCuisines(DUMMY_CUISINES);
+      } else {
+        const [vendorsResponse, cuisinesResponse] = await Promise.all([
+          vendorService.getAll(),
+          cuisineService.getAll(),
+        ]);
+        setVendors(vendorsResponse.data.data || []);
+        setCuisines(cuisinesResponse.data.data || []);
       }
-      Alert.alert(
-        "Error",
-        "Gagal memuat data. Pastikan server backend berjalan."
-      );
+    } catch (error) {
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -78,485 +64,362 @@ export default function HomeScreen() {
     fetchData();
   }, []);
 
-  // Handle vendor selection from navigation params
-  useEffect(() => {
-    if (params.selectedVendorId && vendors.length > 0) {
-      const vendorId = parseInt(params.selectedVendorId as string);
-      const vendor = vendors.find((v) => v.id === vendorId);
-      if (vendor) {
-        setSelectedVendor(vendor);
-      }
-    }
-  }, [params.selectedVendorId, vendors]);
-
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData();
-  };
+  }, []);
 
-  // Filter cuisines based on selected vendor, category, and search query
-  const getFilteredCuisines = () => {
-    let filtered = cuisines;
+  // Memoized filtered data (Vercel Best Practice: rerender-memo)
+  const filteredVendors = useMemo(() => {
+    return vendors.filter(vendor => {
+      const matchesSearch = vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           vendor.address.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory 
+        ? vendor.cuisine?.category === selectedCategory 
+        : true;
+      return matchesSearch && matchesCategory;
+    });
+  }, [vendors, searchQuery, selectedCategory]);
 
-    // Filter by search query first
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(
-        (cuisine) =>
-          cuisine.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          cuisine.description
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          cuisine.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          cuisine.vendors?.some((vendor) =>
-            vendor.name.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-      );
-    }
+  const categories = useMemo(() => {
+    const allCategories = cuisines.map(c => c.category);
+    return ['All', ...new Set(allCategories)];
+  }, [cuisines]);
 
-    // Filter by vendor only if one is selected
-    if (selectedVendor) {
-      filtered = filtered.filter(
-        (cuisine) =>
-          cuisine.vendors?.some((vendor) => vendor.id === selectedVendor.id) ||
-          selectedVendor.cuisine_id === cuisine.id
-      );
-    }
-    // If no vendor selected, show all cuisines
-
-    // Filter by category (if not "All Menu")
-    if (selectedCategory !== "All Menu") {
-      filtered = filtered.filter((cuisine) =>
-        cuisine.category?.toLowerCase().includes(selectedCategory.toLowerCase())
-      );
-    }
-
-    return filtered;
-  };
-
-  const renderCoffeeCard = ({ item }: { item: Cuisine }) => (
-    <TouchableOpacity
-      style={styles.landscapeCard}
-      onPress={() => router.push(`/cuisine/${item.id}` as any)}
-    >
-      <Image
-        source={{
-          uri:
-            item.image_url ||
-            "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-        }}
-        style={styles.landscapeImage}
-        resizeMode="cover"
-      />
-
-      <TouchableOpacity style={styles.heartButton}>
-        <View style={styles.heartContainer}>
-          <FontAwesome name="heart-o" size={20} color="#fff" />
-        </View>
-      </TouchableOpacity>
-      <LinearGradient
-        colors={[
-          "transparent",
-          "rgba(255,255,255,0.5)",
-          "rgba(255,255,255,0.5)",
+  const renderCategoryItem = ({ item }: { item: string }) => {
+    const isSelected = selectedCategory === item || (item === 'All' && selectedCategory === null);
+    return (
+      <TouchableOpacity
+        style={[
+          styles.categoryChip,
+          isSelected && { backgroundColor: colors.primary }
         ]}
-        style={styles.gradientOverlay}
+        onPress={() => setSelectedCategory(item === 'All' ? null : item)}
       >
-        <View style={styles.innerCard}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <View style={styles.infoRow}>
-            <View style={styles.locationRow}>
-              <FontAwesome name="map-marker" size={12} color="#fff" />
-              <Text
-                style={styles.locationText}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {item.vendors?.[0]?.address ||
-                  item.origin_region ||
-                  "Indonesia"}
-              </Text>
-            </View>
+        <Text style={[
+          styles.categoryText,
+          isSelected && { color: '#FFF' }
+        ]}>
+          {item}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
-            <View style={styles.ratingContainer}>
-              <FontAwesome name="star" size={14} color="#FFD700" />
-              <Text style={styles.ratingText}>4.8</Text>
-            </View>
+  const renderVendorCard = ({ item }: { item: Vendor }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => router.push(`/vendor/${item.id}` as any)}
+      activeOpacity={0.9}
+    >
+      <View style={styles.cardImageContainer}>
+        {item.image_url ? (
+          <Image source={{ uri: item.image_url }} style={styles.cardImage} />
+        ) : (
+          <View style={[styles.cardImage, styles.placeholderImage]}>
+            <FontAwesome name="cutlery" size={30} color="#ccc" />
+          </View>
+        )}
+        <View style={styles.ratingBadge}>
+          <FontAwesome name="star" size={12} color="#FFF" />
+          <Text style={styles.ratingText}>{item.rating || 4.5}</Text>
+        </View>
+      </View>
+      
+      <View style={styles.cardContent}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.priceRange}>{item.price_range}</Text>
+        </View>
+        
+        <View style={styles.locationContainer}>
+          <FontAwesome name="map-marker" size={14} color={colors.textSecondary} />
+          <Text style={styles.locationText} numberOfLines={1}>{item.address}</Text>
+        </View>
+
+        <View style={styles.tagsContainer}>
+          <View style={styles.tag}>
+            <Text style={styles.tagText}>{item.cuisine?.category || 'General'}</Text>
+          </View>
+          <View style={styles.tag}>
+            <FontAwesome name="clock-o" size={10} color={colors.textSecondary} style={{marginRight:4}} />
+            <Text style={styles.tagText}>{item.opening_hours}</Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text>Memuat data...</Text>
+        <View style={styles.header}>
+            <View style={styles.headerTop}>
+              <View>
+                <Text style={styles.greeting}>Selamat Datang 👋</Text>
+                <Text style={styles.location}>Explore Kuliner Terbaik</Text>
+              </View>
+              <View style={styles.profileButton}>
+                <FontAwesome name="user" size={20} color={colors.primary} />
+              </View>
+            </View>
+        </View>
+        <View style={{padding: 20}}>
+           {/* Skeleton Loading Demo */}
+           <View style={{height: 200, backgroundColor: '#E0E0E0', borderRadius: 16, marginBottom: 20}} />
+           <View style={{height: 200, backgroundColor: '#E0E0E0', borderRadius: 16}} />
+        </View>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+    <View style={styles.container}>
+      <FlatList
+        data={filteredVendors}
+        renderItem={renderVendorCard}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.locationHeader}>
-          <Text style={styles.locationLabel}>Vendor</Text>
-          <TouchableOpacity
-            style={styles.locationRow}
-            onPress={() => router.push("/vendor-selector" as any)}
-          >
-            <Text style={styles.headerLocationText} numberOfLines={1}>
-              {selectedVendor ? selectedVendor.name : "Semua Vendor"}
-            </Text>
-            <FontAwesome name="chevron-down" size={10} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.profileIcon}>
-          <FontAwesome name="user-circle" size={32} color="#D4761A" />
-        </TouchableOpacity>
-
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <FontAwesome
-              name="search"
-              size={16}
-              color="#666"
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Cari menu makanan atau minuman..."
-              placeholderTextColor="#999"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={() => setSearchQuery("")}
-              >
-                <FontAwesome name="times-circle" size={16} color="#999" />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        <View>
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=120&fit=crop",
-            }}
-            style={styles.promoBanner}
-          />
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryContainer}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryButton,
-                selectedCategory === category && styles.categoryButtonActive,
-              ]}
-              onPress={() => setSelectedCategory(category)}
-            >
-              <Text
-                style={[
-                  styles.categoryButtonText,
-                  selectedCategory === category &&
-                    styles.categoryButtonTextActive,
-                ]}
-              >
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Menu Section */}
-        <View style={styles.popularSection}>
-          <FlatList
-            data={getFilteredCuisines()}
-            renderItem={renderCoffeeCard}
-            keyExtractor={(item) => `cuisine-${item.id}`}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalListContainer}
-            ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                  {searchQuery.trim()
-                    ? `Tidak ada hasil untuk "${searchQuery}"`
-                    : selectedVendor
-                    ? `Tidak ada menu dari ${selectedVendor.name}`
-                    : "Belum ada menu tersedia"}
-                </Text>
-                {searchQuery.trim() && (
-                  <Text style={styles.emptySubtext}>
-                    Coba kata kunci lain atau hapus filter pencarian
-                  </Text>
-                )}
+        ListHeaderComponent={
+          <>
+            <View style={styles.header}>
+              <View style={styles.headerTop}>
+                <View>
+                  <Text style={styles.greeting}>Selamat Datang 👋</Text>
+                  <Text style={styles.location}>Mau makan apa hari ini?</Text>
+                </View>
+                <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileButton}>
+                  <FontAwesome name="user" size={20} color={colors.primary} />
+                </TouchableOpacity>
               </View>
-            }
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+
+              <View style={styles.searchContainer}>
+                <FontAwesome name="search" size={16} color={colors.textSecondary} style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Cari nasi goreng, sate..."
+                  placeholderTextColor={colors.textSecondary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+              </View>
+            </View>
+
+            <View style={styles.categoriesContainer}>
+              <FlatList
+                horizontal
+                data={categories}
+                renderItem={renderCategoryItem}
+                keyExtractor={(item) => item}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+              />
+            </View>
+            
+            <Text style={styles.sectionTitle}>Rekomendasi Populer 🔥</Text>
+          </>
+        }
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>Tidak ada vendor ditemukan</Text>
+        }
+      />
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#F8F9FA',
   },
-  locationHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 5,
+  listContent: {
+    paddingBottom: 100, // Space for floating tab bar
   },
-  locationLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 2,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    backgroundColor: "transparent",
-  },
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "transparent",
-    flex: 1,
-    marginRight: 10,
-  },
-  locationText: {
-    fontSize: 13,
-    color: "#fff",
-    marginLeft: 6,
-    opacity: 0.8,
-    flexShrink: 1,
-  },
-  headerLocationText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#000",
-    marginRight: 5,
-  },
-  profileIcon: {
-    position: "absolute",
-    top: 10,
-    right: 20,
+  header: {
+    padding: 24,
+    paddingTop: 60,
+    backgroundColor: '#FFF',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 5,
     zIndex: 1,
   },
-  searchContainer: {
-    paddingHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 20,
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+  greeting: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  location: {
+    fontSize: 20,
+    color: '#1A1A1A',
+    fontWeight: '800',
+  },
+  profileButton: {
+    width: 44,
+    height: 44,
+    backgroundColor: '#FFF5EB', // Light Orange
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA', // Off-white input background
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    color: "#333",
+    fontSize: 15,
+    color: '#1A1A1A',
+    height: '100%',
   },
-  clearButton: {
-    marginLeft: 10,
-    padding: 5,
+  categoriesContainer: {
+    marginTop: 20,
+    marginBottom: 10,
   },
-  promoBanner: {
+  categoryChip: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#FFF',
+    borderRadius: 25,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginLeft: 24,
+    marginTop: 10,
+    marginBottom: 16,
+  },
+  card: {
+    backgroundColor: '#FFF',
     marginHorizontal: 20,
     marginBottom: 20,
-    width: "89%",
-    height: 130,
-    borderRadius: 16,
-    padding: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    overflow: "hidden",
-  },
-  promoContent: {
-    flex: 1,
-  },
-  promoTag: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-    marginBottom: 8,
-  },
-  promoTagText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  promoTitle: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
-    lineHeight: 28,
-  },
-  promoImage: {
-    width: 280,
-    height: 80,
-    borderRadius: 12,
-  },
-
-  categoryContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  categoryButton: {
-    backgroundColor: "#f5f5f5",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 20,
-    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+    overflow: 'hidden',
   },
-  categoryButtonActive: {
-    backgroundColor: "#D4761A",
+  cardImageContainer: {
+    height: 160,
+    backgroundColor: '#F0F0F0',
+    position: 'relative',
   },
-  categoryButtonText: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
+  cardImage: {
+    width: '100%',
+    height: '100%',
   },
-  categoryButtonTextActive: {
-    color: "#fff",
+  placeholderImage: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 50,
-  },
-  emptyText: {
-    marginTop: 10,
-    fontSize: 4,
-    color: "#666",
-  },
-  emptySubtext: {
-    marginTop: 5,
-    fontSize: 12,
-    color: "#999",
-    textAlign: "center",
-  },
-
-  // Popular Section Styles
-  popularSection: {
-    paddingVertical: 10,
-  },
-  horizontalListContainer: {
-    paddingHorizontal: 20,
-  },
-
-  // Landscape Card Styles
-  landscapeCard: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    borderRadius: 20,
-    overflow: "hidden",
-    position: "relative",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  landscapeImage: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
-  },
-  heartButton: {
-    position: "absolute",
-    top: 15,
-    right: 15,
-    zIndex: 2,
-  },
-  heartContainer: {
-    width: 40,
-    height: 38,
-    borderRadius: 22,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  gradientOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "50%",
-    justifyContent: "flex-end",
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-  },
-  innerCard: {
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    width: "100%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  cardContent: {
-    alignItems: "flex-start",
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 8,
-  },
-  locationContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  ratingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
+  ratingBadge: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 15,
-    backgroundColor: "transparent",
+    borderRadius: 12,
   },
   ratingText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 4,
+  },
+  cardContent: {
+    padding: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    flex: 1,
+    marginRight: 10,
+  },
+  priceRange: {
     fontSize: 14,
-    color: "#fff",
-    fontWeight: "600",
+    color: '#FF6B00', // Modern Orange
+    fontWeight: '600',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  locationText: {
+    fontSize: 13,
+    color: '#666',
     marginLeft: 6,
+    flex: 1,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  tag: {
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginRight: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tagText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#666',
   },
 });
+
+export default HomeScreen;

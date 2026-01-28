@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 export interface Vendor {
   id: number;
@@ -25,6 +25,8 @@ export interface Cuisine {
   description: string;
   origin_region: string;
   category: string;
+  price: number;
+  vendor_id?: number;
   photo?: string;
   image_url?: string;
   vendors?: Vendor[];
@@ -63,57 +65,70 @@ export interface Review {
 
 // Vendor Services
 export const vendorService = {
-  getAll: () => api.get<{ data: Vendor[] }>('/vendors'),
+  getAll: () => api.get<{ data: Vendor[] }>("/vendors"),
   getById: (id: number) => api.get<{ data: Vendor }>(`/vendors/${id}`),
   getNearby: (latitude: number, longitude: number, radius: number = 5) =>
-    api.get<{ data: Vendor[] }>(`/vendors/nearby?lat=${latitude}&lng=${longitude}&radius=${radius}`),
+    api.get<{ data: Vendor[] }>(
+      `/vendors/nearby?lat=${latitude}&lng=${longitude}&radius=${radius}`,
+    ),
 };
 
 // Cuisine Services
 export const cuisineService = {
-  getAll: () => api.get<{ data: Cuisine[] }>('/cuisines'),
+  getAll: () => api.get<{ data: Cuisine[] }>("/cuisines"),
   getById: (id: number) => api.get<{ data: Cuisine }>(`/cuisines/${id}`),
-  getVendors: (cuisineId: number) => api.get<{ data: Vendor[] }>(`/cuisines/${cuisineId}/vendors`),
-  search: (query: string) => api.get<{ data: Cuisine[] }>(`/cuisines/search?q=${encodeURIComponent(query)}`),
+  getVendors: (cuisineId: number) =>
+    api.get<{ data: Vendor[] }>(`/cuisines/${cuisineId}/vendors`),
+  search: (query: string) =>
+    api.get<{ data: Cuisine[] }>(
+      `/cuisines/search?q=${encodeURIComponent(query)}`,
+    ),
 };
 
 // Favorite Services
 export const favoriteService = {
-  getAll: () => api.get<{ data: Favorite[] }>('/favorites'),
-  add: (vendorId: number) => api.post<{ data: Favorite }>(`/vendors/${vendorId}/favorite`),
+  getAll: () => api.get<{ data: Favorite[] }>("/favorites"),
+  add: (vendorId: number) =>
+    api.post<{ data: Favorite }>(`/vendors/${vendorId}/favorite`),
   remove: (vendorId: number) => api.delete(`/vendors/${vendorId}/favorite`),
-  toggle: (vendorId: number) => api.post<{ data: { favorite: Favorite | null; action: 'added' | 'removed' } }>(`/vendors/${vendorId}/favorite`),
+  toggle: (vendorId: number) =>
+    api.post<{
+      data: { favorite: Favorite | null; action: "added" | "removed" };
+    }>(`/vendors/${vendorId}/favorite`),
 };
 
 // Review Services
 export const reviewService = {
-  getByVendor: (vendorId: number) => api.get<{ data: Review[] }>(`/vendors/${vendorId}/reviews`),
+  getByVendor: (vendorId: number) =>
+    api.get<{ data: Review[] }>(`/vendors/${vendorId}/reviews`),
   getByCuisine: async (cuisineId: number) => {
     // Get cuisine with vendors first, then get reviews for all vendors
     try {
       const cuisineResponse = await cuisineService.getById(cuisineId);
       const cuisine = cuisineResponse.data.data;
-      
+
       if (cuisine.vendors && cuisine.vendors.length > 0) {
         // Get reviews for all vendors of this cuisine
-        const reviewPromises = cuisine.vendors.map(vendor => 
-          api.get<{ data: Review[] }>(`/vendors/${vendor.id}/reviews`)
+        const reviewPromises = cuisine.vendors.map((vendor) =>
+          api.get<{ data: Review[] }>(`/vendors/${vendor.id}/reviews`),
         );
-        
+
         const reviewResponses = await Promise.all(reviewPromises);
-        const allReviews = reviewResponses.flatMap(response => response.data.data || []);
-        
+        const allReviews = reviewResponses.flatMap(
+          (response) => response.data.data || [],
+        );
+
         return { data: { data: allReviews } };
       }
-      
+
       return { data: { data: [] } };
     } catch (error) {
-      console.error('Error fetching cuisine reviews:', error);
+      console.error("Error fetching cuisine reviews:", error);
       return { data: { data: [] } };
     }
   },
   create: (data: { vendor_id: number; rating: number; comment: string }) =>
-    api.post<{ data: Review }>('/reviews', data),
+    api.post<{ data: Review }>("/reviews", data),
   update: (id: number, data: { rating: number; comment: string }) =>
     api.put<{ data: Review }>(`/reviews/${id}`, data),
   delete: (id: number) => api.delete(`/reviews/${id}`),
@@ -123,17 +138,33 @@ export const reviewService = {
 
 // User Services
 export const userService = {
-  getProfile: () => api.get<{ data: User }>('/user'),
-  updateProfile: (data: Partial<User>) => api.put<{ data: User }>('/user', data),
-  getStats: () => api.get<{ data: { totalFavorites: number; totalReviews: number; totalReviewLikes: number } }>('/user/stats'),
+  getProfile: () => api.get<{ data: User }>("/user"),
+  updateProfile: (data: Partial<User>) =>
+    api.put<{ data: User }>("/user", data),
+  getStats: () =>
+    api.get<{
+      data: {
+        totalFavorites: number;
+        totalReviews: number;
+        totalReviewLikes: number;
+      };
+    }>("/user/stats"),
 };
 
 // Auth Services
 export const authService = {
   login: (email: string, password: string) =>
-    api.post<{ data: { user: User; token: string } }>('/auth/login', { email, password }),
-  register: (data: { name: string; email: string; password: string; password_confirmation: string }) =>
-    api.post<{ data: { user: User; token: string } }>('/auth/register', data),
-  logout: () => api.post('/auth/logout'),
-  refreshToken: () => api.post<{ data: { token: string } }>('/auth/refresh'),
+    api.post<{ data: { user: User; token: string } }>("/auth/login", {
+      email,
+      password,
+    }),
+  register: (data: {
+    name: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+  }) =>
+    api.post<{ data: { user: User; token: string } }>("/auth/register", data),
+  logout: () => api.post("/auth/logout"),
+  refreshToken: () => api.post<{ data: { token: string } }>("/auth/refresh"),
 };

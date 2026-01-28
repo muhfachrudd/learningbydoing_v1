@@ -1,41 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
-  Image, 
+import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Image,
   Alert,
   RefreshControl,
   Dimensions,
-  SafeAreaView
-} from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+  SafeAreaView,
+  TextInput,
+  View as RNView,
+} from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
-import { Text, View } from '@/components/Themed';
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { vendorService, Vendor } from '@/services/apiServices';
+import { Text, View } from "@/components/Themed";
+import { vendorService, Vendor } from "@/services/apiServices";
+import { dummyService } from "@/services/dummyData";
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 30) / 2;
+const USE_DUMMY_DATA = true; // Set to false to use real API
+
+const { width } = Dimensions.get("window");
+const CARD_WIDTH = (width - 36) / 2;
 
 export default function VendorsScreen() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const colorScheme = useColorScheme();
+  const [search, setSearch] = useState("");
   const router = useRouter();
 
   const fetchVendors = async () => {
     try {
-      console.log('Fetching vendors from API...');
-      const response = await vendorService.getAll();
-      console.log('Vendors response:', response.data);
-      setVendors(response.data.data || []);
+      if (USE_DUMMY_DATA) {
+        console.log("Using DUMMY DATA for Vendors");
+        const response = await dummyService.getAllVendors();
+        setVendors(response.data.data || []);
+      } else {
+        const response = await vendorService.getAll();
+        setVendors(response.data.data || []);
+      }
     } catch (error: any) {
-      console.error('Error fetching vendors:', error);
-      Alert.alert('Error', 'Gagal memuat data vendor. Pastikan server backend berjalan.');
+      Alert.alert(
+        "Error",
+        "Gagal memuat data vendor. Pastikan server backend berjalan."
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -51,30 +60,41 @@ export default function VendorsScreen() {
     fetchVendors();
   };
 
+  const filteredVendors = vendors.filter((v) =>
+    v.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   const renderVendorCard = ({ item }: { item: Vendor }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.vendorCard}
-      onPress={() => {
-        // Navigate to vendor detail page
-        router.push(`/vendor/${item.id}` as any);
-      }}
+      activeOpacity={0.9}
+      onPress={() => router.push(`/vendor/${item.id}` as any)}
     >
       {item.image_url ? (
         <Image source={{ uri: item.image_url }} style={styles.vendorImage} />
       ) : (
         <View style={[styles.vendorImage, styles.placeholderImage]}>
-          <FontAwesome name="cutlery" size={30} color="#D4761A" />
+          <FontAwesome name="cutlery" size={40} color="#D4761A" />
         </View>
       )}
+      <View style={styles.overlay} />
+
       <View style={styles.vendorContent}>
-        <Text style={styles.vendorName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.vendorAddress} numberOfLines={2}>{item.address}</Text>
+        <Text style={styles.vendorName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={styles.vendorAddress} numberOfLines={1}>
+          {item.address}
+        </Text>
+
         <View style={styles.vendorFooter}>
-          <View style={styles.ratingContainer}>
-            <FontAwesome name="star" size={14} color="#FFD700" />
-            <Text style={styles.ratingText}>{item.rating ? item.rating.toFixed(1) : '4.5'}</Text>
+          <View style={styles.ratingBadge}>
+            <FontAwesome name="star" size={13} color="#FFD700" />
+            <Text style={styles.ratingText}>
+              {item.rating ? item.rating.toFixed(1) : "4.5"}
+            </Text>
           </View>
-          <Text style={styles.vendorType}>Lihat Detail</Text>
+          <Text style={styles.detailButton}>Detail ➝</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -84,7 +104,9 @@ export default function VendorsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text>Memuat vendor...</Text>
+          <Text style={{ fontSize: 16, color: "#666" }}>
+            ⏳ Memuat vendor...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -92,13 +114,28 @@ export default function VendorsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header Modern */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Vendors</Text>
-        <Text style={styles.headerSubtitle}>Klik untuk melihat detail vendor</Text>
+        <Text style={styles.headerTitle}>Cari Restauran</Text>
+        <RNView style={styles.searchBox}>
+          <FontAwesome
+            name="search"
+            size={16}
+            color="#999"
+            style={{ marginRight: 6 }}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Cari nama vendor..."
+            value={search}
+            onChangeText={setSearch}
+          />
+        </RNView>
       </View>
 
+      {/* List Vendor */}
       <FlatList
-        data={vendors}
+        data={filteredVendors}
         renderItem={renderVendorCard}
         keyExtractor={(item) => `vendor-${item.id}`}
         numColumns={2}
@@ -121,109 +158,135 @@ export default function VendorsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#F9FAFB",
   },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    backgroundColor: '#fff',
+    paddingVertical: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#111",
+    marginBottom: 12,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#666',
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F2F2F2",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#333",
   },
   listContainer: {
-    padding: 10,
-    paddingBottom: 20,
+    padding: 12,
+    paddingBottom: 50,
   },
   vendorCard: {
-    backgroundColor: '#fff',
     borderRadius: 16,
-    margin: 5,
+    margin: 6,
     width: CARD_WIDTH,
+    height: 200,
+    backgroundColor: "#fff",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
   },
   vendorImage: {
-    width: '100%',
-    height: 120,
+    width: "100%",
+    height: "100%",
+    position: "absolute",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
   },
   placeholderImage: {
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    borderRadius: 16,
   },
   vendorContent: {
+    position: "absolute",
+    borderRadius: 16,
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 12,
+    backgroundColor: "rgba(0,0,0,0.15)",
   },
   vendorName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    fontWeight: "700",
+    color: "#000",
   },
   vendorAddress: {
     fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
-    lineHeight: 16,
+    color: "#000",
+    marginTop: 2,
   },
   vendorFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginTop: 8,
+    flexDirection: "row",
+    backgroundColor: "transparent",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  ratingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF7D1",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
   ratingText: {
     fontSize: 12,
     marginLeft: 4,
-    color: '#333',
-    fontWeight: '600',
+    fontWeight: "600",
   },
-  vendorType: {
-    fontSize: 10,
-    color: '#D4761A',
-    backgroundColor: '#FFF3E6',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    fontWeight: '500',
+  detailButton: {
+    fontSize: 11,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    fontWeight: "600",
+    backgroundColor: "#fff",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
-    paddingHorizontal: 20,
+    alignItems: "center",
+    paddingVertical: 60,
   },
   emptyText: {
     marginTop: 15,
     fontSize: 18,
-    color: '#333',
-    fontWeight: '600',
+    color: "#333",
+    fontWeight: "600",
   },
   emptySubtext: {
     marginTop: 5,
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
 });

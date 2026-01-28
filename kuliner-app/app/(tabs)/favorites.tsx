@@ -10,6 +10,7 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
+import { DUMMY_CUISINES } from '@/services/dummyData';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -22,8 +23,26 @@ export default function FavoritesScreen() {
   const colorScheme = useColorScheme();
   const router = useRouter();
 
+const USE_DUMMY_DATA = true;
+
   const fetchFavorites = async () => {
     try {
+      if (USE_DUMMY_DATA) {
+        // Mock favorites mapped from dummy cuisines
+        const mockFavorites = DUMMY_CUISINES.slice(0, 3).map((cuisine: any, index: number) => ({
+          id: index + 1,
+          user_id: 1,
+          cuisine_id: cuisine.id,
+          vendor_id: 1,
+          cuisine: cuisine,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as unknown as Favorite));
+        
+        setFavorites(mockFavorites);
+        return;
+      }
+
       const response = await favoriteService.getAll();
       setFavorites(response.data.data || []);
     } catch (error) {
@@ -46,6 +65,12 @@ export default function FavoritesScreen() {
 
   const removeFavorite = async (favoriteId: number) => {
     try {
+      if (USE_DUMMY_DATA) {
+        setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
+        Alert.alert('Berhasil', 'Kuliner telah dihapus dari favorit (Dummy)');
+        return;
+      }
+
       await favoriteService.remove(favoriteId);
       
       setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
