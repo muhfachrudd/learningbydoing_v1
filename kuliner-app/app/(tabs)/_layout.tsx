@@ -17,19 +17,19 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopWidth: 0,
-          elevation: 0,
           shadowOpacity: 0,
-          height: Platform.OS === "ios" ? 90 : 80, // Taller for iOS Home Indicator
+          height: 90,
           position: "absolute",
-          bottom: Platform.OS === "ios" ? 0 : 25, // Dock on iOS, Float on Android
-          left: Platform.OS === "ios" ? 0 : 20,
-          right: Platform.OS === "ios" ? 0 : 20,
-          borderRadius: Platform.OS === "ios" ? 0 : 25, // No radius on iOS (docked)
-          borderTopLeftRadius: Platform.OS === "ios" ? 20 : 25, // Round Top Corder Only for iOS
-          borderTopRightRadius: Platform.OS === "ios" ? 20 : 25,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          borderRadius: 0,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: 10 },
+          shadowOffset: { width: 0, height: -10 },
           shadowRadius: 20,
+          elevation: 20,
           borderWidth: 1,
           borderColor: colors.border,
         },
@@ -98,7 +98,7 @@ function TabBarIcon(props: { source: any; focused: boolean }) {
       style={{
         alignItems: "center",
         justifyContent: "center",
-        top: 10,
+        top: 14,
       }}
     >
       <View
