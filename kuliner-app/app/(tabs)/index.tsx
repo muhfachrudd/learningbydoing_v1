@@ -69,17 +69,24 @@ const HomeScreen = () => {
     fetchData();
   }, []);
 
-  // Memoized filtered data (Vercel Best Practice: rerender-memo)
+  // Memoized filtered data - DIPERBAIKI
   const filteredVendors = useMemo(() => {
     return vendors.filter((vendor) => {
+      // Filter berdasarkan search query
       const matchesSearch =
         vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         vendor.address.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const vendorCuisine = cuisines.find((c) => c.id === vendor.cuisine_id);
-      const matchesCategory = selectedCategory
-        ? vendorCuisine?.category === selectedCategory
-        : true;
+      // Filter berdasarkan kategori - PERBAIKAN DI SINI
+      let matchesCategory = true;
+      if (selectedCategory) {
+        // Cari semua cuisines yang dimiliki vendor ini
+        const vendorCuisines = cuisines.filter((c) => c.vendor_id === vendor.id);
+        // Check apakah ada cuisine yang categorynya sesuai dengan selectedCategory
+        matchesCategory = vendorCuisines.some(
+          (cuisine) => cuisine.category === selectedCategory
+        );
+      }
 
       return matchesSearch && matchesCategory;
     });
@@ -109,65 +116,73 @@ const HomeScreen = () => {
     );
   };
 
-  const renderVendorCard = ({ item }: { item: Vendor }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => router.push(`/vendor/${item.id}` as any)}
-      activeOpacity={0.9}
-    >
-      <View style={styles.cardImageContainer}>
-        {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={styles.cardImage} />
-        ) : (
-          <View style={[styles.cardImage, styles.placeholderImage]}>
-            <FontAwesome name="cutlery" size={30} color="#ccc" />
+  const renderVendorCard = ({ item }: { item: Vendor }) => {
+    // Ambil cuisine utama vendor untuk ditampilkan di tag - DIPERBAIKI
+    const vendorCuisines = cuisines.filter((c) => c.vendor_id === item.id);
+    const primaryCuisine = vendorCuisines.find((c) => c.category === "Makanan") || vendorCuisines[0];
+    const displayCategory = primaryCuisine?.category || "General";
+
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => router.push(`/vendor/${item.id}` as any)}
+        activeOpacity={0.9}
+      >
+        <View style={styles.cardImageContainer}>
+          {item.image_url ? (
+            <Image 
+              source={{ uri: item.image_url }} 
+              style={styles.cardImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.cardImage, styles.placeholderImage]}>
+              <FontAwesome name="cutlery" size={30} color="#ccc" />
+            </View>
+          )}
+          <View style={styles.ratingBadge}>
+            <FontAwesome name="star" size={12} color="#FFF" />
+            <Text style={styles.ratingText}>{item.rating || 4.5}</Text>
           </View>
-        )}
-        <View style={styles.ratingBadge}>
-          <FontAwesome name="star" size={12} color="#FFF" />
-          <Text style={styles.ratingText}>{item.rating || 4.5}</Text>
-        </View>
-      </View>
-
-      <View style={styles.cardContent}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={styles.priceRange}>Rp. {item.price_range}</Text>
         </View>
 
-        <View style={styles.locationContainer}>
-          <FontAwesome
-            name="map-marker"
-            size={14}
-            color={colors.textSecondary}
-          />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {item.address}
-          </Text>
-        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={styles.priceRange}>Rp. {item.price_range}</Text>
+          </View>
 
-        <View style={styles.tagsContainer}>
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>
-              {cuisines.find((c) => c.id === item.cuisine_id)?.category ||
-                "General"}
+          <View style={styles.locationContainer}>
+            <FontAwesome
+              name="map-marker"
+              size={14}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {item.address}
             </Text>
           </View>
-          <View style={styles.tag}>
-            <FontAwesome
-              name="clock-o"
-              size={10}
-              color={colors.textSecondary}
-              style={{ marginRight: 4 }}
-            />
-            <Text style={styles.tagText}>{item.opening_hours}</Text>
+
+          <View style={styles.tagsContainer}>
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>{displayCategory}</Text>
+            </View>
+            <View style={styles.tag}>
+              <FontAwesome
+                name="clock-o"
+                size={10}
+                color={colors.textSecondary}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={styles.tagText}>{item.opening_hours}</Text>
+            </View>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -257,7 +272,7 @@ const HomeScreen = () => {
               />
             </View>
 
-            <Text style={styles.sectionTitle}>Rekomendasi Populer</Text>
+            <Text style={styles.sectionTitle}>Restoran Populer</Text>
           </>
         }
         refreshControl={
@@ -281,7 +296,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
   },
   listContent: {
-    paddingBottom: 100, // Space for floating tab bar
+    paddingBottom: 100,
   },
   header: {
     padding: 24,
@@ -327,7 +342,7 @@ const styles = StyleSheet.create({
   profileButton: {
     width: 44,
     height: 44,
-    backgroundColor: "#FFF5EB", // Light Orange
+    backgroundColor: "#FFF5EB",
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
@@ -335,7 +350,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F9FA", // Off-white input background
+    backgroundColor: "#F8F9FA",
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 52,
@@ -437,7 +452,7 @@ const styles = StyleSheet.create({
   },
   priceRange: {
     fontSize: 14,
-    color: "#FF6B00", // Modern Orange
+    color: "#FF6B00",
     fontWeight: "600",
   },
   locationContainer: {

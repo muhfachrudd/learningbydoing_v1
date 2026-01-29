@@ -13,7 +13,7 @@ export const DUMMY_VENDORS: Vendor[] = [
     image_url:
       "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=2070&auto=format&fit=crop",
     rating: 4.8,
-    cuisine_id: 1,
+    cuisine_id: 1, // This field might not be needed if using vendor_id in cuisines
     reviews_count: 120,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -55,6 +55,7 @@ export const DUMMY_VENDORS: Vendor[] = [
 ];
 
 export const DUMMY_CUISINES: Cuisine[] = [
+  // VENDOR 1 - Warung Nasi Padang
   {
     id: 1,
     name: "Rendang Daging",
@@ -67,35 +68,6 @@ export const DUMMY_CUISINES: Cuisine[] = [
       "https://images.unsplash.com/photo-1626082927389-6cd097cdc6a0?q=80&w=2670&auto=format&fit=crop",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    vendors: [DUMMY_VENDORS[0]],
-  },
-  {
-    id: 2,
-    name: "Sate Ayam",
-    description: "Tusukan daging ayam bakar dengan bumbu kacang.",
-    origin_region: "Madura, Jawa Timur",
-    category: "Makanan",
-    price: 25000,
-    vendor_id: 2,
-    image_url:
-      "https://images.unsplash.com/photo-1533169344440-10a45bc38618?q=80&w=2670&auto=format&fit=crop",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    vendors: [DUMMY_VENDORS[1]],
-  },
-  {
-    id: 3,
-    name: "Bakso Urat",
-    description: "Bola daging sapi dengan tekstur urat yang kenyal.",
-    origin_region: "Solo, Jawa Tengah",
-    category: "Makanan",
-    price: 20000,
-    vendor_id: 3,
-    image_url:
-      "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?q=80&w=2070&auto=format&fit=crop",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    vendors: [DUMMY_VENDORS[2]],
   },
   {
     id: 4,
@@ -109,10 +81,9 @@ export const DUMMY_CUISINES: Cuisine[] = [
       "https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=2564&auto=format&fit=crop",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    vendors: [DUMMY_VENDORS[0], DUMMY_VENDORS[1], DUMMY_VENDORS[2]],
   },
   {
-    id: 5,
+    id: 7,
     name: "Kerupuk Putih",
     description: "Kerupuk renyah pelengkap makan.",
     origin_region: "Indonesia",
@@ -123,7 +94,75 @@ export const DUMMY_CUISINES: Cuisine[] = [
       "https://images.unsplash.com/photo-1596765796033-d8c973a21696?q=80&w=2670&auto=format&fit=crop",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    vendors: [DUMMY_VENDORS[0], DUMMY_VENDORS[2]],
+  },
+  
+  // VENDOR 2 - Sate Ayam Madura
+  {
+    id: 2,
+    name: "Sate Ayam",
+    description: "Tusukan daging ayam bakar dengan bumbu kacang.",
+    origin_region: "Madura, Jawa Timur",
+    category: "Makanan",
+    price: 25000,
+    vendor_id: 2,
+    image_url:
+      "https://images.unsplash.com/photo-1533169344440-10a45bc38618?q=80&w=2670&auto=format&fit=crop",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 5,
+    name: "Es Teh Manis",
+    description: "Teh hitam dingin dengan gula.",
+    origin_region: "Indonesia",
+    category: "Minuman",
+    price: 5000,
+    vendor_id: 2,
+    image_url:
+      "https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=2564&auto=format&fit=crop",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  
+  // VENDOR 3 - Bakso Boedjangan
+  {
+    id: 3,
+    name: "Bakso Urat",
+    description: "Bola daging sapi dengan tekstur urat yang kenyal.",
+    origin_region: "Solo, Jawa Tengah",
+    category: "Makanan",
+    price: 20000,
+    vendor_id: 3,
+    image_url:
+      "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?q=80&w=2070&auto=format&fit=crop",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 6,
+    name: "Es Teh Manis",
+    description: "Teh hitam dingin dengan gula.",
+    origin_region: "Indonesia",
+    category: "Minuman",
+    price: 5000,
+    vendor_id: 3,
+    image_url:
+      "https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=2564&auto=format&fit=crop",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 8,
+    name: "Kerupuk Putih",
+    description: "Kerupuk renyah pelengkap makan.",
+    origin_region: "Indonesia",
+    category: "Snack",
+    price: 2000,
+    vendor_id: 3,
+    image_url:
+      "https://images.unsplash.com/photo-1596765796033-d8c973a21696?q=80&w=2670&auto=format&fit=crop",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ];
 
@@ -154,6 +193,9 @@ export const dummyService = {
   getCuisineVendors: async (cuisineId: number) => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     const cuisine = DUMMY_CUISINES.find((c) => c.id === cuisineId);
-    return { data: { data: cuisine?.vendors || [] } };
+    if (!cuisine) return { data: { data: [] } };
+    
+    const vendor = DUMMY_VENDORS.find((v) => v.id === cuisine.vendor_id);
+    return { data: { data: vendor ? [vendor] : [] } };
   },
 };

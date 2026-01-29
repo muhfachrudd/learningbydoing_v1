@@ -57,7 +57,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <TabBarIcon
-              source={require("../../assets/images/nav/vendor.png")}
+              source={require("../../assets/images/nav/search.png")}
               focused={focused}
             />
           ),
