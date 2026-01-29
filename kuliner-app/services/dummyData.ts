@@ -8,7 +8,7 @@ export const DUMMY_VENDORS: Vendor[] = [
     latitude: -6.2,
     longitude: 106.816666,
     opening_hours: "08:00 - 22:00",
-    price_range: "$$",
+    price_range: "40.000",
     contact: "08123456789",
     image_url:
       "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=2070&auto=format&fit=crop",
@@ -25,10 +25,10 @@ export const DUMMY_VENDORS: Vendor[] = [
     latitude: -6.21,
     longitude: 106.82,
     opening_hours: "16:00 - 23:00",
-    price_range: "$",
+    price_range: "25.000",
     contact: "08198765432",
     image_url:
-      "https://images.unsplash.com/photo-1593759608142-e9b6c9cb7127?q=80&w=2600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1623341214825-9f4f963727da?auto=format&fit=crop&w=1200&q=80",
     rating: 4.7,
     cuisine_id: 2,
     reviews_count: 85,
@@ -42,7 +42,7 @@ export const DUMMY_VENDORS: Vendor[] = [
     latitude: -6.22,
     longitude: 106.83,
     opening_hours: "10:00 - 22:00",
-    price_range: "$$",
+    price_range: "20.000",
     contact: "08123456000",
     image_url:
       "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?q=80&w=2670&auto=format&fit=crop",
