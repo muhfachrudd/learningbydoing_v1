@@ -4,16 +4,16 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
-  Dimensions,
   TextInput,
   RefreshControl,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
+
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
+
 import {
   vendorService,
   cuisineService,
@@ -22,14 +22,19 @@ import {
 } from "@/services/apiServices";
 import { DUMMY_VENDORS, DUMMY_CUISINES } from "@/services/dummyData";
 
+/* ================= CONFIG ================= */
+
 const USE_DUMMY_DATA = true;
 
-const HomeScreen = () => {
-  const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+/* ================= COMPONENT ================= */
 
-  // State
+export default function HomeScreen() {
+  const router = useRouter();
+  const scheme = useColorScheme();
+  const colors = Colors[scheme ?? "light"];
+
+  /* ================= STATE ================= */
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -37,146 +42,169 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchData = async () => {
+  /* ================= DATA ================= */
+
+  const fetchData = useCallback(async () => {
     try {
       if (USE_DUMMY_DATA) {
-        // Simulate network delay for skeleton demo
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        await new Promise((r) => setTimeout(r, 600));
         setVendors(DUMMY_VENDORS);
         setCuisines(DUMMY_CUISINES);
-      } else {
-        const [vendorsResponse, cuisinesResponse] = await Promise.all([
-          vendorService.getAll(),
-          cuisineService.getAll(),
-        ]);
-        setVendors(vendorsResponse.data.data || []);
-        setCuisines(cuisinesResponse.data.data || []);
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching data:", error);
+
+      const [vendorRes, cuisineRes] = await Promise.all([
+        vendorService.getAll(),
+        cuisineService.getAll(),
+      ]);
+
+      setVendors(vendorRes.data.data ?? []);
+      setCuisines(cuisineRes.data.data ?? []);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = () => {
     setRefreshing(true);
     fetchData();
-  }, []);
+  };
 
-  // Memoized filtered data - DIPERBAIKI
-  const filteredVendors = useMemo(() => {
-    return vendors.filter((vendor) => {
-      // Filter berdasarkan search query
-      const matchesSearch =
-        vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        vendor.address.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Filter berdasarkan kategori - PERBAIKAN DI SINI
-      let matchesCategory = true;
-      if (selectedCategory) {
-        // Cari semua cuisines yang dimiliki vendor ini
-        const vendorCuisines = cuisines.filter((c) => c.vendor_id === vendor.id);
-        // Check apakah ada cuisine yang categorynya sesuai dengan selectedCategory
-        matchesCategory = vendorCuisines.some(
-          (cuisine) => cuisine.category === selectedCategory
-        );
-      }
-
-      return matchesSearch && matchesCategory;
-    });
-  }, [vendors, searchQuery, selectedCategory, cuisines]);
+  /* ================= MEMO ================= */
 
   const categories = useMemo(() => {
-    const allCategories = cuisines.map((c) => c.category);
-    return ["All", ...new Set(allCategories)];
+    const all = cuisines.map((c) => c.category);
+    return ["All", ...new Set(all)];
   }, [cuisines]);
 
-  const renderCategoryItem = ({ item }: { item: string }) => {
-    const isSelected =
+  const filteredVendors = useMemo(() => {
+    const keyword = searchQuery.toLowerCase();
+
+    return vendors.filter((v) => {
+      const matchSearch =
+        v.name.toLowerCase().includes(keyword) ||
+        v.address.toLowerCase().includes(keyword);
+
+      if (!selectedCategory) return matchSearch;
+
+      const vendorCuisines = cuisines.filter(
+        (c) => c.vendor_id === v.id
+      );
+
+      return (
+        matchSearch &&
+        vendorCuisines.some((c) => c.category === selectedCategory)
+      );
+    });
+  }, [vendors, cuisines, searchQuery, selectedCategory]);
+
+  /* ================= RENDER ================= */
+
+  const renderCategory = ({ item }: { item: string }) => {
+    const active =
       selectedCategory === item ||
       (item === "All" && selectedCategory === null);
+
     return (
       <TouchableOpacity
+        onPress={() => setSelectedCategory(item === "All" ? null : item)}
         style={[
           styles.categoryChip,
-          isSelected && { backgroundColor: colors.primary },
+          {
+            backgroundColor: active ? colors.primary : colors.surface,
+            borderColor: colors.border,
+          },
         ]}
-        onPress={() => setSelectedCategory(item === "All" ? null : item)}
       >
-        <Text style={[styles.categoryText, isSelected && { color: "#FFF" }]}>
+        <Text style={{ color: active ? "#FFF" : colors.text, fontWeight: "600" }}>
           {item}
         </Text>
       </TouchableOpacity>
     );
   };
 
-  const renderVendorCard = ({ item }: { item: Vendor }) => {
-    // Ambil cuisine utama vendor untuk ditampilkan di tag - DIPERBAIKI
-    const vendorCuisines = cuisines.filter((c) => c.vendor_id === item.id);
-    const primaryCuisine = vendorCuisines.find((c) => c.category === "Makanan") || vendorCuisines[0];
-    const displayCategory = primaryCuisine?.category || "General";
+  const renderVendor = ({ item }: { item: Vendor }) => {
+    const vendorCuisines = cuisines.filter(
+      (c) => c.vendor_id === item.id
+    );
+
+    const displayCategory =
+      vendorCuisines[0]?.category ?? "General";
 
     return (
       <TouchableOpacity
-        style={styles.card}
-        onPress={() => router.push(`/vendor/${item.id}` as any)}
+        style={[styles.card, { backgroundColor: colors.surface }]}
         activeOpacity={0.9}
+        onPress={() => router.push(`/vendor/${item.id}` as any)}
       >
-        <View style={styles.cardImageContainer}>
+        {/* IMAGE */}
+        <View style={styles.cardImageWrap}>
           {item.image_url ? (
-            <Image 
-              source={{ uri: item.image_url }} 
-              style={styles.cardImage}
-              resizeMode="cover"
-            />
+            <Image source={{ uri: item.image_url }} style={styles.cardImage} />
           ) : (
-            <View style={[styles.cardImage, styles.placeholderImage]}>
-              <FontAwesome name="cutlery" size={30} color="#ccc" />
+            <View style={styles.placeholder}>
+              <FontAwesome
+                name="cutlery"
+                size={28}
+                color={colors.textSecondary}
+              />
             </View>
           )}
+
+          {/* RATING */}
           <View style={styles.ratingBadge}>
             <FontAwesome name="star" size={12} color="#FFF" />
-            <Text style={styles.ratingText}>{item.rating || 4.5}</Text>
+            <Text style={styles.ratingText}>
+              {item.rating ?? 4.5}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.cardContent}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle} numberOfLines={1}>
-              {item.name}
-            </Text>
-            <Text style={styles.priceRange}>Rp. {item.price_range}</Text>
-          </View>
+        {/* CONTENT */}
+        <View style={styles.cardBody}>
+          <Text style={styles.cardTitle}>{item.name}</Text>
 
-          <View style={styles.locationContainer}>
+          <View style={styles.row}>
             <FontAwesome
               name="map-marker"
               size={14}
               color={colors.textSecondary}
             />
-            <Text style={styles.locationText} numberOfLines={1}>
+            <Text style={styles.address} numberOfLines={1}>
               {item.address}
             </Text>
           </View>
 
           <View style={styles.tagsContainer}>
-            <View style={styles.tag}>
+            <View
+              style={[
+                styles.tag,
+                { backgroundColor: colors.background },
+              ]}
+            >
               <Text style={styles.tagText}>{displayCategory}</Text>
             </View>
-            <View style={styles.tag}>
+
+            <View
+              style={[
+                styles.tag,
+                { backgroundColor: colors.background },
+              ]}
+            >
               <FontAwesome
                 name="clock-o"
-                size={10}
+                size={11}
                 color={colors.textSecondary}
                 style={{ marginRight: 4 }}
               />
-              <Text style={styles.tagText}>{item.opening_hours}</Text>
+              <Text style={styles.tagText}>
+                {item.opening_hours ?? "08.00 - 22.00"}
+              </Text>
             </View>
           </View>
         </View>
@@ -184,38 +212,12 @@ const HomeScreen = () => {
     );
   };
 
+  /* ================= UI ================= */
+
   if (loading) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.greeting}>Selamat Datang</Text>
-              <Text style={styles.location}>Explore Kuliner Terbaik</Text>
-            </View>
-            <View style={styles.profileButton}>
-              <FontAwesome name="user" size={20} color={colors.primary} />
-            </View>
-          </View>
-        </View>
-        <View style={{ padding: 20 }}>
-          {/* Skeleton Loading Demo */}
-          <View
-            style={{
-              height: 200,
-              backgroundColor: "#E0E0E0",
-              borderRadius: 16,
-              marginBottom: 20,
-            }}
-          />
-          <View
-            style={{
-              height: 200,
-              backgroundColor: "#E0E0E0",
-              borderRadius: 16,
-            }}
-          />
-        </View>
+      <View style={styles.center}>
+        <Text>Memuat data...</Text>
       </View>
     );
   }
@@ -224,57 +226,10 @@ const HomeScreen = () => {
     <View style={styles.container}>
       <FlatList
         data={filteredVendors}
-        renderItem={renderVendorCard}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
+        keyExtractor={(i) => i.id.toString()}
+        renderItem={renderVendor}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <>
-            <View style={styles.header}>
-              <View style={styles.headerTop}>
-                <View style={styles.textWrapper}>
-                  <Text style={styles.greeting}>Selamat Datang</Text>
-                  <Text style={styles.location}>Mau makan apa hari ini?</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => router.push("/profile")}
-                  style={styles.profileButton}
-                >
-                  <FontAwesome name="user" size={20} color={colors.primary} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.searchContainer}>
-                <FontAwesome
-                  name="search"
-                  size={16}
-                  color={colors.textSecondary}
-                  style={styles.searchIcon}
-                />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Cari nasi goreng, sate..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-              </View>
-            </View>
-
-            <View style={styles.categoriesContainer}>
-              <FlatList
-                horizontal
-                data={categories}
-                renderItem={renderCategoryItem}
-                keyExtractor={(item) => item}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 20 }}
-              />
-            </View>
-
-            <Text style={styles.sectionTitle}>Restoran Populer</Text>
-          </>
-        }
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -282,196 +237,208 @@ const HomeScreen = () => {
             colors={[colors.primary]}
           />
         }
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>Tidak ada vendor ditemukan</Text>
+        ListHeaderComponent={
+          <>
+            {/* HEADER */}
+            <View style={[styles.header, { backgroundColor: colors.primary }]}>
+              <View style={styles.headerTop}>
+                <View>
+                  <Text style={styles.headerSub}>Selamat Datang</Text>
+                  <Text style={styles.headerTitle}>
+                    Mau makan apa hari ini?
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.profileBtn,
+                    { backgroundColor: colors.background },
+                  ]}
+                  onPress={() => router.push("/profile")}
+                >
+                  <FontAwesome name="user" size={18} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+
+              <View
+                style={[
+                  styles.searchBox,
+                  { backgroundColor: colors.background },
+                ]}
+              >
+                <FontAwesome
+                  name="search"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+                <TextInput
+                  placeholder="Cari makanan..."
+                  placeholderTextColor={colors.textSecondary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  style={{ marginLeft: 8, flex: 1 }}
+                />
+              </View>
+            </View>
+
+            <FlatList
+              horizontal
+              data={categories}
+              renderItem={renderCategory}
+              keyExtractor={(i) => i}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryList}
+            />
+
+            <Text style={styles.section}>Restoran Populer</Text>
+          </>
         }
       />
     </View>
   );
-};
+}
+
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1 },
+
+  center: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  listContent: {
-    paddingBottom: 100,
-  },
+
   header: {
     padding: 24,
-    paddingTop: 50,
-    backgroundColor: "#fff",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 5,
-    zIndex: 1,
+    paddingTop: 60,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
 
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-    backgroundColor: "transparent",
+    marginBottom: 20,
   },
 
-  textWrapper: {
-    backgroundColor: "transparent",
+  headerSub: {
+    fontSize: 13,
+    color: "#ffffffcc",
   },
 
-  greeting: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "600",
-    marginBottom: 2,
-    backgroundColor: "transparent",
-  },
-
-  location: {
+  headerTitle: {
     fontSize: 20,
-    color: "#1A1A1A",
     fontWeight: "800",
-    backgroundColor: "transparent",
+    color: "#FFF",
   },
 
-  profileButton: {
+  profileBtn: {
     width: 44,
     height: 44,
-    backgroundColor: "#FFF5EB",
     borderRadius: 14,
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
-  searchContainer: {
+
+  searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F9FA",
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 52,
-    borderWidth: 1,
-    borderColor: "#EFEFEF",
   },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: "#1A1A1A",
-    height: "100%",
-  },
-  categoriesContainer: {
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  categoryChip: {
+
+  categoryList: {
     paddingHorizontal: 20,
+    marginVertical: 16,
+  },
+
+  categoryChip: {
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    backgroundColor: "#FFF",
-    borderRadius: 25,
+    borderRadius: 24,
     marginRight: 10,
     borderWidth: 1,
-    borderColor: "#EFEFEF",
   },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#666",
-  },
-  sectionTitle: {
+
+  section: {
+    marginHorizontal: 24,
     fontSize: 18,
     fontWeight: "800",
-    color: "#1A1A1A",
-    marginLeft: 24,
-    marginTop: 10,
     marginBottom: 16,
   },
+
   card: {
-    backgroundColor: "#FFF",
     marginHorizontal: 20,
     marginBottom: 20,
     borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
     overflow: "hidden",
+    elevation: 2,
   },
-  cardImageContainer: {
+
+  cardImageWrap: {
     height: 160,
-    backgroundColor: "#F0F0F0",
-    position: "relative",
   },
+
   cardImage: {
     width: "100%",
     height: "100%",
   },
-  placeholderImage: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
   ratingBadge: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    backgroundColor: "rgba(0,0,0,0.7)",
+    top: 14,
+    right: 14,
+    backgroundColor: "rgba(0,0,0,0.75)",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
   },
+
   ratingText: {
+    marginLeft: 4,
     color: "#FFF",
     fontSize: 12,
     fontWeight: "700",
-    marginLeft: 4,
   },
-  cardContent: {
+
+  placeholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  cardBody: {
     padding: 16,
   },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
+
   cardTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
-    color: "#1A1A1A",
-    flex: 1,
-    marginRight: 10,
   },
-  priceRange: {
-    fontSize: 14,
-    color: "#FF6B00",
-    fontWeight: "600",
-  },
-  locationContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  locationText: {
+
+  address: {
+    marginLeft: 6,
     fontSize: 13,
     color: "#666",
-    marginLeft: 6,
     flex: 1,
   },
+
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+  },
+
   tagsContainer: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    marginTop: 10,
   },
+
   tag: {
-    backgroundColor: "#F8F9FA",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
@@ -479,17 +446,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+
   tagText: {
     fontSize: 12,
     color: "#666",
     fontWeight: "500",
   },
-  emptyText: {
-    textAlign: "center",
-    marginTop: 20,
-    fontSize: 16,
-    color: "#666",
-  },
 });
-
-export default HomeScreen;

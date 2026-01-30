@@ -1,10 +1,11 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { Image, View, Platform } from "react-native";
+import { Image, View, StyleSheet } from "react-native";
 
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 
+/* ================= TAB LAYOUT ================= */
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -12,33 +13,21 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
+        tabBarShowLabel: false,
+
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.tabIconDefault,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopWidth: 0,
-          shadowOpacity: 0,
-          height: 90,
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          borderRadius: 0,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -10 },
-          shadowRadius: 20,
-          elevation: 20,
-          borderWidth: 1,
-          borderColor: colors.border,
-        },
-        tabBarShowLabel: false,
-        tabBarIconStyle: {
-          width: 30,
-          height: 30,
-        },
-        headerShown: false,
+
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          },
+        ],
+
+        tabBarIconStyle: styles.tabBarIcon,
       }}
     >
       <Tabs.Screen
@@ -46,41 +35,44 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <TabBarIcon
-              source={require("../../assets/images/nav/home.png")}
               focused={focused}
+              source={require("../../assets/images/nav/home.png")}
             />
           ),
         }}
       />
+
       <Tabs.Screen
         name="vendors"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabBarIcon
-              source={require("../../assets/images/nav/search.png")}
               focused={focused}
+              source={require("../../assets/images/nav/search.png")}
             />
           ),
         }}
       />
+
       <Tabs.Screen
         name="favorites"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabBarIcon
-              source={require("../../assets/images/nav/like.png")}
               focused={focused}
+              source={require("../../assets/images/nav/like.png")}
             />
           ),
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabBarIcon
-              source={require("../../assets/images/nav/profile.png")}
               focused={focused}
+              source={require("../../assets/images/nav/profile.png")}
             />
           ),
         }}
@@ -89,48 +81,91 @@ export default function TabLayout() {
   );
 }
 
-function TabBarIcon(props: { source: any; focused: boolean }) {
+/* ================= TAB BAR ICON ================= */
+interface TabBarIconProps {
+  source: any;
+  focused: boolean;
+}
+
+function TabBarIcon({ source, focused }: TabBarIconProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
   return (
-    <View
-      style={{
-        alignItems: "center",
-        justifyContent: "center",
-        top: 14,
-      }}
-    >
+    <View style={styles.iconWrapper}>
       <View
-        style={{
-          padding: 10,
-          borderRadius: 20,
-          backgroundColor: props.focused
-            ? colors.primary + "15"
-            : "transparent",
-        }}
+        style={[
+          styles.iconContainer,
+          focused && {
+            backgroundColor: `${colors.primary}15`,
+          },
+        ]}
       >
         <Image
-          source={props.source}
-          style={{
-            width: 24,
-            height: 24,
-            tintColor: props.focused ? colors.primary : colors.tabIconDefault,
-          }}
+          source={source}
           resizeMode="contain"
+          style={[
+            styles.iconImage,
+            {
+              tintColor: focused ? colors.primary : colors.tabIconDefault,
+            },
+          ]}
         />
       </View>
-      {props.focused && (
-        <View
-          style={{
-            width: 4,
-            height: 4,
-            backgroundColor: colors.primary,
-            borderRadius: 2,
-            marginTop: 4,
-          }}
-        />
+
+      {focused && (
+        <View style={[styles.activeDot, { backgroundColor: colors.primary }]} />
       )}
     </View>
   );
 }
+
+/* ================= STYLE ================= */
+const styles = StyleSheet.create({
+  tabBar: {
+    height: 90,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+
+    borderTopWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 15,
+  },
+
+  tabBarIcon: {
+    width: 30,
+    height: 30,
+  },
+
+  iconWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    top: 14,
+  },
+
+  iconContainer: {
+    padding: 10,
+    borderRadius: 20,
+    backgroundColor: "transparent",
+  },
+
+  iconImage: {
+    width: 24,
+    height: 24,
+  },
+
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 4,
+  },
+});
