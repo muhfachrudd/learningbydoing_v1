@@ -92,9 +92,7 @@ export default function HomeScreen() {
 
       if (!selectedCategory) return matchSearch;
 
-      const vendorCuisines = cuisines.filter(
-        (c) => c.vendor_id === v.id
-      );
+      const vendorCuisines = cuisines.filter((c) => c.vendor_id === v.id);
 
       return (
         matchSearch &&
@@ -121,7 +119,12 @@ export default function HomeScreen() {
           },
         ]}
       >
-        <Text style={{ color: active ? "#FFF" : colors.text, fontWeight: "600" }}>
+        <Text
+          style={{
+            color: active ? "#FFF" : colors.text,
+            fontWeight: "600",
+          }}
+        >
           {item}
         </Text>
       </TouchableOpacity>
@@ -129,20 +132,15 @@ export default function HomeScreen() {
   };
 
   const renderVendor = ({ item }: { item: Vendor }) => {
-    const vendorCuisines = cuisines.filter(
-      (c) => c.vendor_id === item.id
-    );
-
-    const displayCategory =
-      vendorCuisines[0]?.category ?? "General";
+    const cuisine =
+      cuisines.find((c) => c.vendor_id === item.id)?.category ?? "General";
 
     return (
       <TouchableOpacity
         style={[styles.card, { backgroundColor: colors.surface }]}
-        activeOpacity={0.9}
         onPress={() => router.push(`/vendor/${item.id}` as any)}
+        activeOpacity={0.9}
       >
-        {/* IMAGE */}
         <View style={styles.cardImageWrap}>
           {item.image_url ? (
             <Image source={{ uri: item.image_url }} style={styles.cardImage} />
@@ -155,19 +153,14 @@ export default function HomeScreen() {
               />
             </View>
           )}
-
-          {/* RATING */}
           <View style={styles.ratingBadge}>
             <FontAwesome name="star" size={12} color="#FFF" />
-            <Text style={styles.ratingText}>
-              {item.rating ?? 4.5}
-            </Text>
+            <Text style={styles.ratingText}>{item.rating || 4.5}</Text>
           </View>
         </View>
 
-        {/* CONTENT */}
         <View style={styles.cardBody}>
-          <Text style={styles.cardTitle}>{item.name}</Text>
+          <Text style={{ fontSize: 16, fontWeight: "700" }}>{item.name}</Text>
 
           <View style={styles.row}>
             <FontAwesome
@@ -175,44 +168,29 @@ export default function HomeScreen() {
               size={14}
               color={colors.textSecondary}
             />
-            <Text style={styles.address} numberOfLines={1}>
+            <Text style={styles.muted} numberOfLines={1}>
               {item.address}
             </Text>
           </View>
 
           <View style={styles.tagsContainer}>
-            <View
-              style={[
-                styles.tag,
-                { backgroundColor: colors.background },
-              ]}
-            >
-              <Text style={styles.tagText}>{displayCategory}</Text>
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>{cuisine}</Text>
             </View>
-
-            <View
-              style={[
-                styles.tag,
-                { backgroundColor: colors.background },
-              ]}
-            >
+            <View style={styles.tag}>
               <FontAwesome
                 name="clock-o"
-                size={11}
+                size={10}
                 color={colors.textSecondary}
                 style={{ marginRight: 4 }}
               />
-              <Text style={styles.tagText}>
-                {item.opening_hours ?? "08.00 - 22.00"}
-              </Text>
+              <Text style={styles.tagText}>{item.opening_hours}</Text>
             </View>
           </View>
         </View>
       </TouchableOpacity>
     );
   };
-
-  /* ================= UI ================= */
 
   if (loading) {
     return (
@@ -229,7 +207,7 @@ export default function HomeScreen() {
         keyExtractor={(i) => i.id.toString()}
         renderItem={renderVendor}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 90 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -243,10 +221,8 @@ export default function HomeScreen() {
             <View style={[styles.header, { backgroundColor: colors.primary }]}>
               <View style={styles.headerTop}>
                 <View>
-                  <Text style={styles.headerSub}>Selamat Datang</Text>
-                  <Text style={styles.headerTitle}>
-                    Mau makan apa hari ini?
-                  </Text>
+                  <Text style={[{ color: colors.text }]}>Selamat Datang</Text>
+                  <Text style={[styles.title, { color: colors.text }]}>Mau makan apa hari ini...?</Text>
                 </View>
 
                 <TouchableOpacity
@@ -312,8 +288,11 @@ const styles = StyleSheet.create({
   header: {
     padding: 24,
     paddingTop: 60,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
   },
 
   headerTop: {
@@ -322,15 +301,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  headerSub: {
-    fontSize: 13,
-    color: "#ffffffcc",
-  },
-
-  headerTitle: {
+  title: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#FFF",
+  },
+
+  muted: {
+    fontSize: 13,
+    marginLeft: 8,
+    color: "#000000ff",
   },
 
   profileBtn: {
@@ -360,6 +339,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     marginRight: 10,
     borderWidth: 1,
+    elevation: 1,
+    shadowOpacity: 0.04,
   },
 
   section: {
@@ -373,12 +354,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 20,
     borderRadius: 20,
-    overflow: "hidden",
     elevation: 2,
+    shadowOpacity: 0.06,
   },
 
   cardImageWrap: {
     height: 160,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
   },
 
   cardImage: {
@@ -388,9 +372,9 @@ const styles = StyleSheet.create({
 
   ratingBadge: {
     position: "absolute",
-    top: 14,
-    right: 14,
-    backgroundColor: "rgba(0,0,0,0.75)",
+    top: 16,
+    right: 16,
+    backgroundColor: "rgba(0,0,0,0.7)",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
@@ -399,10 +383,10 @@ const styles = StyleSheet.create({
   },
 
   ratingText: {
-    marginLeft: 4,
     color: "#FFF",
     fontSize: 12,
     fontWeight: "700",
+    marginLeft: 4,
   },
 
   placeholder: {
@@ -415,18 +399,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
-  address: {
-    marginLeft: 6,
-    fontSize: 13,
-    color: "#666",
-    flex: 1,
-  },
-
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -435,10 +407,11 @@ const styles = StyleSheet.create({
 
   tagsContainer: {
     flexDirection: "row",
-    marginTop: 10,
+    flexWrap: "wrap",
   },
 
   tag: {
+    backgroundColor: "#F8F9FA",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
@@ -446,7 +419,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-
+  
   tagText: {
     fontSize: 12,
     color: "#666",
