@@ -1,25 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image, 
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  Image,
   Alert,
-  ScrollView 
-} from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+  ScrollView,
+  View as RNView,
+} from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
 
-import { Text, View } from '@/components/Themed';
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { userService, User } from '@/services/apiServices';
+import { Text, View } from "@/components/Themed";
+import Colors from "@/constants/Colors";
+import { useColorScheme } from "@/components/useColorScheme";
+import { userService, User } from "@/services/apiServices";
+import type { ComponentProps } from "react";
 
+/* ================= TYPES ================= */
 interface ProfileStats {
   totalFavorites: number;
   totalReviews: number;
   totalReviewLikes: number;
 }
+type IconName = ComponentProps<typeof FontAwesome>["name"];
+interface MenuItemProps {
+  icon: IconName;
+  title: string;
+  subtitle?: string;
+  onPress: () => void;
+  showArrow?: boolean;
+}
 
+/* ================= COMPONENT ================= */
 export default function ProfileScreen() {
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? "light"];
+
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<ProfileStats>({
     totalFavorites: 0,
@@ -27,23 +42,30 @@ export default function ProfileScreen() {
     totalReviewLikes: 0,
   });
   const [loading, setLoading] = useState(true);
-  const colorScheme = useColorScheme();
 
-const USE_DUMMY_DATA = true;
+  const USE_DUMMY_DATA = true;
 
+  /* ================= EFFECT ================= */
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  /* ================= FUNCTIONS ================= */
   const fetchProfile = async () => {
     try {
       if (USE_DUMMY_DATA) {
-        // Mock data
         setUser({
           id: 1,
           name: "Budi Santoso",
           email: "budi@example.com",
-          avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=2680&auto=format&fit=crop",
+          avatar:
+            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
           email_verified_at: new Date().toISOString(),
-          created_at: new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString(),
+          created_at: new Date(
+            new Date().setFullYear(new Date().getFullYear() - 1),
+          ).toISOString(),
         } as User);
-        
+
         setStats({
           totalFavorites: 12,
           totalReviews: 5,
@@ -52,279 +74,251 @@ const USE_DUMMY_DATA = true;
         return;
       }
 
-      const userResponse = await userService.getProfile();
-      const statsResponse = await userService.getStats();
+      const [userRes, statsRes] = await Promise.all([
+        userService.getProfile(),
+        userService.getStats(),
+      ]);
 
-      setUser(userResponse.data.data);
-      setStats(statsResponse.data.data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      Alert.alert('Error', 'Gagal memuat profil');
+      setUser(userRes.data.data);
+      setStats(statsRes.data.data);
+    } catch {
+      Alert.alert("Error", "Gagal memuat profil");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const handleEditProfile = () => {
-    Alert.alert('Info', 'Fitur edit profil akan segera tersedia');
-  };
-
-  const handleSettings = () => {
-    Alert.alert('Info', 'Fitur pengaturan akan segera tersedia');
-  };
-
-  const handleAbout = () => {
-    Alert.alert(
-      'Tentang Aplikasi',
-      'Kuliner App v1.0.0\n\nAplikasi untuk menemukan kuliner terbaik di sekitar Anda.',
-      [{ text: 'OK' }]
-    );
-  };
-
-  const handleLogout = () => {
-    Alert.alert(
-      'Keluar',
-      'Apakah Anda yakin ingin keluar dari aplikasi?',
-      [
-        {
-          text: 'Batal',
-          style: 'cancel',
-        },
-        {
-          text: 'Keluar',
-          style: 'destructive',
-          onPress: () => {
-            // Implement logout logic here
-            Alert.alert('Info', 'Fitur logout akan segera diimplementasi');
-          },
-        },
-      ]
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString("id-ID", {
+      month: "long",
+      year: "numeric",
     });
-  };
 
-  const MenuItem = ({ 
-    icon, 
-    title, 
-    subtitle, 
-    onPress, 
-    showArrow = true 
-  }: {
-    icon: string;
-    title: string;
-    subtitle?: string;
-    onPress: () => void;
-    showArrow?: boolean;
-  }) => (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-      <View style={styles.menuItemLeft}>
-        <View style={styles.menuIcon}>
-          <FontAwesome name={icon as any} size={20} color={Colors[colorScheme ?? 'light'].tint} />
-        </View>
-        <View>
-          <Text style={styles.menuTitle}>{title}</Text>
-          {subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
-        </View>
-      </View>
-      {showArrow && (
-        <FontAwesome name="chevron-right" size={16} color="#ccc" />
-      )}
-    </TouchableOpacity>
-  );
-
+  /* ================= RENDER ================= */
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.center, { backgroundColor: theme.background }]}>
         <Text>Memuat profil...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header */}
-      <View style={styles.profileHeader}>
-        <View style={styles.avatarContainer}>
-          {user?.avatar ? (
-            <Image source={{ uri: user.avatar }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <FontAwesome name="user" size={40} color={Colors[colorScheme ?? 'light'].tabIconDefault} />
-            </View>
-          )}
-        </View>
-        <Text style={styles.userName}>{user?.name || 'Nama Pengguna'}</Text>
-        <Text style={styles.userEmail}>{user?.email || 'email@example.com'}</Text>
-        {user?.created_at && (
-          <Text style={styles.joinDate}>Bergabung {formatDate(user.created_at)}</Text>
-        )}
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ================= HEADER ================= */}
+      <View style={[styles.header, { backgroundColor: theme.primary }]}>
+        <Avatar uri={user?.avatar} />
+
+        <Text style={[styles.name, { color: theme.text }]}>{user?.name}</Text>
+        <Text style={{ color: theme.text }}>{user?.email}</Text>
+        <Text style={{ color: theme.text }}>
+          Bergabung {formatDate(user!.created_at)}
+        </Text>
+
+        <Stats stats={stats} theme={theme} />
       </View>
 
-      {/* Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.totalFavorites}</Text>
-          <Text style={styles.statLabel}>Favorit</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.totalReviews}</Text>
-          <Text style={styles.statLabel}>Review</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.totalReviewLikes}</Text>
-          <Text style={styles.statLabel}>Like</Text>
-        </View>
-      </View>
+      {/* ================= MENU ================= */}
+      <MenuItem
+        icon="edit"
+        title="Edit Profil"
+        subtitle="Ubah informasi profil Anda"
+        onPress={() => Alert.alert("Info", "Segera tersedia")}
+        theme={theme}
+      />
+      <MenuItem
+        icon="cog"
+        title="Pengaturan"
+        subtitle="Kelola preferensi aplikasi"
+        onPress={() => Alert.alert("Info", "Segera tersedia")}
+        theme={theme}
+      />
+      <MenuItem
+        icon="info-circle"
+        title="Tentang"
+        subtitle="Informasi aplikasi"
+        onPress={() => Alert.alert("Kuliner App v1.0.0")}
+        theme={theme}
+      />
+      <MenuItem
+        icon="sign-out"
+        title="Keluar"
+        onPress={() => Alert.alert("Logout")}
+        showArrow={false}
+        theme={theme}
+      />
 
-      {/* Menu Items */}
-      <View style={styles.menuContainer}>
-        <MenuItem
-          icon="edit"
-          title="Edit Profil"
-          subtitle="Ubah informasi profil Anda"
-          onPress={handleEditProfile}
-        />
-        
-        <MenuItem
-          icon="cog"
-          title="Pengaturan"
-          subtitle="Kelola preferensi aplikasi"
-          onPress={handleSettings}
-        />
-        
-        <MenuItem
-          icon="info-circle"
-          title="Tentang"
-          subtitle="Informasi aplikasi"
-          onPress={handleAbout}
-        />
-        
-        <MenuItem
-          icon="sign-out"
-          title="Keluar"
-          onPress={handleLogout}
-          showArrow={false}
-        />
-      </View>
+      <RNView style={{ height: 24 }} />
     </ScrollView>
   );
 }
 
+/* ================= SUB COMPONENTS ================= */
+
+function Avatar({ uri }: { uri?: string }) {
+  return (
+    <RNView style={styles.avatarWrapper}>
+      {uri ? (
+        <Image source={{ uri }} style={styles.avatar} />
+      ) : (
+        <RNView style={styles.avatarPlaceholder}>
+          <FontAwesome name="user" size={36} color="#aaa" />
+        </RNView>
+      )}
+    </RNView>
+  );
+}
+
+function Stats({ stats, theme }: { stats: ProfileStats; theme: any }) {
+  return (
+    <RNView style={[styles.statsBox, { backgroundColor: theme.surface }]}>
+      <StatItem label="Favorit" value={stats.totalFavorites} theme={theme} />
+      <Divider theme={theme} />
+      <StatItem label="Review" value={stats.totalReviews} theme={theme} />
+      <Divider theme={theme} />
+      <StatItem label="Like" value={stats.totalReviewLikes} theme={theme} />
+    </RNView>
+  );
+}
+
+function StatItem({
+  label,
+  value,
+  theme,
+}: {
+  label: string;
+  value: number;
+  theme: any;
+}) {
+  return (
+    <RNView style={styles.statItem}>
+      <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
+      <Text style={{ color: theme.textSecondary }}>{label}</Text>
+    </RNView>
+  );
+}
+
+function Divider({ theme }: { theme: any }) {
+  return <RNView style={[styles.divider, { backgroundColor: theme.border }]} />;
+}
+
+function MenuItem({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  showArrow = true,
+  theme,
+}: MenuItemProps & { theme: any }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={[styles.menuItem, { backgroundColor: theme.surface }]}
+    >
+      <RNView style={styles.menuLeft}>
+        <RNView
+          style={[styles.menuIcon, { backgroundColor: theme.secondPrimary }]}
+        >
+          <FontAwesome name={icon} size={22} color={theme.tint} />
+        </RNView>
+
+        <RNView>
+          <Text style={[styles.menuTitle, { color: theme.text }]}>{title}</Text>
+          {subtitle && (
+            <Text style={{ color: theme.textSecondary }}>{subtitle}</Text>
+          )}
+        </RNView>
+      </RNView>
+
+      {showArrow && (
+        <FontAwesome
+          name="chevron-right"
+          size={16}
+          color={theme.tabIconDefault}
+        />
+      )}
+    </TouchableOpacity>
+  );
+}
+
+/* ================= STYLES ================= */
 const styles = StyleSheet.create({
-  container: {
+  center: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+
+  header: {
+    alignItems: "center",
+    paddingTop: 60,
+    paddingBottom: 16,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 3,
   },
-  profileHeader: {
-    backgroundColor: 'white',
-    alignItems: 'center',
-    padding: 30,
-    marginBottom: 20,
-  },
-  avatarContainer: {
-    marginBottom: 15,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
+
+  avatarWrapper: { marginBottom: 16 },
+  avatar: { width: 80, height: 80, borderRadius: 40 },
   avatarPlaceholder: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#eee",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  userName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 5,
+
+  name: { fontSize: 22, fontWeight: "bold" },
+
+  statsBox: {
+    flexDirection: "row",
+    marginTop: 10,
+    marginHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
-  userEmail: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 5,
-  },
-  joinDate: {
-    fontSize: 14,
-    color: '#999',
-  },
-  statsContainer: {
-    backgroundColor: 'white',
-    flexDirection: 'row',
-    paddingVertical: 20,
-    marginBottom: 20,
-  },
+
   statItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
+    backgroundColor: "transparent",
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#eee',
-  },
-  menuContainer: {
-    backgroundColor: 'white',
-  },
+
+  statValue: { fontSize: 22, fontWeight: "bold" },
+  divider: { width: 1, marginVertical: 8 },
+
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 12,
+    marginHorizontal: 12,
+    marginTop: 10,
+    borderRadius: 14,
+    elevation: 2,
   },
-  menuItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+
+  menuLeft: {
+    flexDirection: "row",
+    alignItems: "center",
   },
+
   menuIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
   },
+
   menuTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  menuSubtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontWeight: "500",
   },
 });

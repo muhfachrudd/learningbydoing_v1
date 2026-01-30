@@ -1,5 +1,6 @@
 const tintColorLight = '#FF6B00'; // Vivid Orange
 const tintColorDark = '#FF8533'; // Lighter Orange for Dark Mode
+const secondPrimary = "#FFF5EB"
 
 export default {
   light: {
@@ -11,6 +12,7 @@ export default {
     tabIconDefault: '#9CA3AF',
     tabIconSelected: tintColorLight,
     primary: tintColorLight,
+    secondPrimary: secondPrimary,
     secondary: '#1A1A1A',
     border: '#E5E7EB',
     error: '#DC2626',
@@ -26,6 +28,7 @@ export default {
     tabIconDefault: '#6B7280',
     tabIconSelected: tintColorDark,
     primary: tintColorDark,
+    secondPrimary: secondPrimary,
     secondary: '#FFFFFF',
     border: '#374151',
     error: '#EF4444',
