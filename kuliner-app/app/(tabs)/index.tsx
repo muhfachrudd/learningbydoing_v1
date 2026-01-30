@@ -219,10 +219,14 @@ export default function HomeScreen() {
           <>
             {/* HEADER */}
             <View style={[styles.header, { backgroundColor: colors.primary }]}>
+              {/* Decorative Circle */}
+              <View style={styles.decorativeCircle} />
               <View style={styles.headerTop}>
                 <View>
                   <Text style={[{ color: colors.text }]}>Selamat Datang</Text>
-                  <Text style={[styles.title, { color: colors.text }]}>Mau makan apa hari ini...?</Text>
+                  <Text style={[styles.title, { color: colors.text }]}>
+                    Mau makan apa hari ini...?
+                  </Text>
                 </View>
 
                 <TouchableOpacity
@@ -419,10 +423,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  
+
   tagText: {
     fontSize: 12,
     color: "#666",
     fontWeight: "500",
+  },
+
+  decorativeCircle: {
+    position: "absolute",
+    top: -140,
+    left: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
   },
 });
