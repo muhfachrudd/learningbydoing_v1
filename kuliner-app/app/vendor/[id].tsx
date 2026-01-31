@@ -260,7 +260,10 @@ export default function VendorDetailScreen() {
         <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.shareButton}>
+      <TouchableOpacity 
+        style={styles.shareButton}
+        onPress={() => Alert.alert('Share', `Bagikan ${vendor?.name || 'restoran ini'} ke teman!`)}
+      >
         <Ionicons name="share-social-outline" size={22} color="#1A1A1A" />
       </TouchableOpacity>
 
@@ -509,7 +512,7 @@ export default function VendorDetailScreen() {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Menu Populer
               </Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => Alert.alert('Menu', 'Fitur lihat semua menu segera hadir!')}>
                 <Text style={[styles.seeAllText, { color: colors.primary }]}>
                   Lihat Semua
                 </Text>

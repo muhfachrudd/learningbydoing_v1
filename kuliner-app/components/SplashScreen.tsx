@@ -111,12 +111,12 @@ const styles = StyleSheet.create({
 
   decorativeCircle: {
     position: "absolute",
-    top: -100,
-    right: -100,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    top: -80,
+    right: -80,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
 
   content: {
@@ -125,25 +125,20 @@ const styles = StyleSheet.create({
   },
 
   logoContainer: {
-    marginBottom: 24,
+    marginBottom: 28,
   },
 
-  // 🔥 KUNCI LOGO BULAT SEMPURNA
   logoWrapper: {
-    width: 100,
-    height: 100,
-    borderRadius: 20,
+    width: 90,
+    height: 90,
+    borderRadius: 24,
     overflow: "hidden",
     backgroundColor: "#FFFFFF",
-
-    // Shadow iOS
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-
-    // Shadow Android
-    elevation: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
 
   logo: {
@@ -156,30 +151,28 @@ const styles = StyleSheet.create({
   },
 
   appName: {
-    fontSize: 32,
-    fontWeight: "800",
-    fontFamily: "Poppins-Bold",
+    fontSize: 28,
+    fontWeight: "700",
     color: "white",
-    marginBottom: 8,
-    letterSpacing: 0.5,
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
 
   tagline: {
-    fontSize: 16,
-    color: "rgba(255,255,255,0.9)",
+    fontSize: 14,
+    color: "rgba(255,255,255,0.85)",
     fontWeight: "500",
-    fontFamily: "Poppins-Medium",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
 
   footer: {
     position: "absolute",
-    bottom: 40,
+    bottom: 50,
   },
 
   versionText: {
-    color: "rgba(255,255,255,0.6)",
+    color: "rgba(255,255,255,0.5)",
     fontSize: 12,
-    fontFamily: "Poppins-Regular",
+    fontWeight: "500",
   },
 });

@@ -397,7 +397,10 @@ export default function HomeScreen() {
                   {item.reviews_count || 0} reviews
                 </Text>
               </View>
-              <TouchableOpacity style={styles.viewBtn}>
+              <TouchableOpacity 
+                style={styles.viewBtn}
+                onPress={() => router.push(`/vendor/${item.id}` as any)}
+              >
                 <Text style={[styles.viewBtnText, { color: colors.primary }]}>
                   Lihat Detail
                 </Text>
@@ -561,7 +564,10 @@ export default function HomeScreen() {
                   Hidden Gems
                 </Text>
               </View>
-              <TouchableOpacity style={styles.seeAllBtn}>
+              <TouchableOpacity 
+                style={styles.seeAllBtn}
+                onPress={() => router.push('/(tabs)/vendors')}
+              >
                 <Text style={[styles.seeAllText, { color: colors.primary }]}>
                   Lihat Semua
                 </Text>
@@ -598,7 +604,10 @@ export default function HomeScreen() {
                 Restoran Populer
               </Text>
             </View>
-            <TouchableOpacity style={styles.seeAllBtn}>
+            <TouchableOpacity 
+              style={styles.seeAllBtn}
+              onPress={() => router.push('/(tabs)/vendors')}
+            >
               <Text style={[styles.seeAllText, { color: colors.primary }]}>
                 Lihat Semua
               </Text>

@@ -28,11 +28,13 @@ import Animated, {
   withSequence,
   withDelay,
 } from "react-native-reanimated";
+import { useRouter } from "expo-router";
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 import { userService, User } from "@/services/apiServices";
+import { useAuth } from "@/utils/AuthContext";
 import type { ComponentProps } from "react";
 
 /* ================= TYPES ================= */
@@ -63,6 +65,8 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const isDark = colorScheme === "dark";
+  const router = useRouter();
+  const { user: authUser, logout, isLoggedIn } = useAuth();
 
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<ProfileStats>({
@@ -178,6 +182,18 @@ export default function ProfileScreen() {
   /* ================= FUNCTIONS ================= */
   const fetchProfile = async () => {
     try {
+      // Use auth user data if available
+      if (authUser) {
+        setUser(authUser);
+        setStats({
+          totalFavorites: 12,
+          totalReviews: 5,
+          totalReviewLikes: 25,
+        });
+        setLoading(false);
+        return;
+      }
+
       if (USE_DUMMY_DATA) {
         setUser({
           id: 1,
@@ -211,6 +227,24 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Apakah Anda yakin ingin keluar?",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Keluar",
+          style: "destructive",
+          onPress: async () => {
+            await logout();
+            router.replace("/auth/login");
+          },
+        },
+      ]
+    );
   };
 
   const formatDate = (date: string) =>
@@ -450,7 +484,7 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInUp.delay(900).springify()}>
           <TouchableOpacity
             style={[styles.logoutBtn, { borderColor: theme.error }]}
-            onPress={() => Alert.alert("Logout", "Yakin ingin keluar?")}
+            onPress={handleLogout}
             activeOpacity={0.8}
           >
             <FontAwesome name="sign-out" size={20} color={theme.error} />
