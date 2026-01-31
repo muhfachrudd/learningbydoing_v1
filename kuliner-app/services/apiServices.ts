@@ -15,6 +15,8 @@ export interface Vendor {
   cuisine_id: number;
   cuisine?: Cuisine;
   reviews_count?: number;
+  is_hidden_gem?: boolean;
+  distance_km?: number;
   created_at: string;
   updated_at: string;
 }
