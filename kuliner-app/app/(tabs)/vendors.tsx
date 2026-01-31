@@ -251,9 +251,13 @@ export default function VendorsScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.headerGradient}
           >
-            {/* Decorative Elements */}
-            <Animated.View style={[styles.decorCircle1, decorCircle1Style]} />
-            <Animated.View style={[styles.decorCircle2, decorCircle2Style]} />
+            {/* Decorative Elements - Wrapped to avoid Reanimated transform conflict */}
+            <View style={styles.decorCircle1}>
+              <Animated.View style={[StyleSheet.absoluteFill, decorCircle1Style, { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 80 }]} />
+            </View>
+            <View style={styles.decorCircle2}>
+              <Animated.View style={[StyleSheet.absoluteFill, decorCircle2Style, { backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 50 }]} />
+            </View>
 
             <Animated.View entering={FadeInDown.delay(100).springify()}>
               <View style={styles.headerTitleWrap}>
@@ -401,7 +405,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    overflow: "hidden",
   },
 
   decorCircle2: {
@@ -411,7 +415,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    overflow: "hidden",
   },
 
   headerTitleWrap: {

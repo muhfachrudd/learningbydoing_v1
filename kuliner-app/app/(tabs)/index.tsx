@@ -470,10 +470,14 @@ export default function HomeScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.headerGradient}
           >
-            {/* Decorative Elements */}
-            <Animated.View style={[styles.decorCircle1, decorCircle1Style]} />
-            <Animated.View style={[styles.decorCircle2, decorCircle2Style]} />
-            <Animated.View style={styles.decorCircle3} />
+            {/* Decorative Elements - Wrapped to avoid Reanimated transform conflict */}
+            <View style={styles.decorCircle1}>
+              <Animated.View style={[StyleSheet.absoluteFill, decorCircle1Style, { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 100 }]} />
+            </View>
+            <View style={styles.decorCircle2}>
+              <Animated.View style={[StyleSheet.absoluteFill, decorCircle2Style, { backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 60 }]} />
+            </View>
+            <View style={styles.decorCircle3} />
 
             <Animated.View
               entering={FadeInDown.delay(100).springify()}
@@ -696,7 +700,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    overflow: "hidden",
   },
 
   decorCircle2: {
@@ -706,7 +710,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    overflow: "hidden",
   },
 
   decorCircle3: {

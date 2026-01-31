@@ -81,7 +81,6 @@ export default function VendorDetailScreen() {
   const headerAnimatedStyle = useAnimatedStyle(() => {
     // Keep header image completely static - no movement
     return {
-      transform: [{ translateY: 0 }],
       opacity: 1,
     };
   });

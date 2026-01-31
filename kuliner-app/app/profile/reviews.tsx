@@ -323,9 +323,9 @@ export default function MyReviewsScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
-          <Animated.View entering={FadeInDown.delay(100).springify()}>
+          <View>
             <Text style={styles.headerTitle}>Review Saya</Text>
-          </Animated.View>
+          </View>
           <View style={{ width: 40 }} />
         </LinearGradient>
       </Animated.View>
@@ -340,10 +340,9 @@ export default function MyReviewsScreen() {
         {/* Stats Card */}
         <Animated.View
           entering={FadeInUp.delay(200).springify()}
-          style={[statsAnimatedStyle]}
         >
           <View style={[styles.statsContainer, { backgroundColor: colors.surface }]}>
-            <Animated.View entering={FadeInUp.delay(300)} style={styles.statItem}>
+            <View style={styles.statItem}>
               <View style={[styles.statIconWrap, { backgroundColor: `${colors.primary}15` }]}>
                 <Ionicons name="document-text" size={20} color={colors.primary} />
               </View>
@@ -353,9 +352,9 @@ export default function MyReviewsScreen() {
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
                 Total Review
               </Text>
-            </Animated.View>
+            </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-            <Animated.View entering={FadeInUp.delay(400)} style={styles.statItem}>
+            <View style={styles.statItem}>
               <View style={[styles.statIconWrap, { backgroundColor: "rgba(245,158,11,0.15)" }]}>
                 <Ionicons name="heart" size={20} color="#F59E0B" />
               </View>
@@ -365,9 +364,9 @@ export default function MyReviewsScreen() {
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
                 Total Likes
               </Text>
-            </Animated.View>
+            </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-            <Animated.View entering={FadeInUp.delay(500)} style={styles.statItem}>
+            <View style={styles.statItem}>
               <View style={[styles.statIconWrap, { backgroundColor: "rgba(16,185,129,0.15)" }]}>
                 <MaterialCommunityIcons name="diamond-stone" size={20} color="#10B981" />
               </View>
@@ -377,7 +376,7 @@ export default function MyReviewsScreen() {
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
                 Hidden Gems
               </Text>
-            </Animated.View>
+            </View>
           </View>
         </Animated.View>
 
