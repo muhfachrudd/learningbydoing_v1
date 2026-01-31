@@ -7,15 +7,28 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
+  Image,
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { authService } from '@/services/apiServices';
+import { useAuth } from '@/utils/AuthContext';
+
+// Dummy credentials for testing without backend
+const DUMMY_USER = {
+  id: 1,
+  name: 'John Doe',
+  email: 'demo@kuliner.app',
+  phone: '08123456789',
+  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+  created_at: new Date().toISOString(),
+};
+const DUMMY_PASSWORD = 'password123';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -23,7 +36,9 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -33,19 +48,28 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const response = await authService.login(email.trim(), password);
-      const { user, token } = response.data.data;
+      // Try real API first
+      try {
+        const response = await authService.login(email.trim(), password);
+        const { user, token } = response.data.data;
+        await login(user, token);
+        router.replace('/(tabs)');
+        return;
+      } catch (apiError) {
+        // If API fails, check dummy credentials
+        console.log('API login failed, checking dummy credentials...');
+      }
 
-      // Save token to AsyncStorage
-      await AsyncStorage.setItem('auth_token', token);
-      await AsyncStorage.setItem('user_data', JSON.stringify(user));
-
-      Alert.alert('Berhasil', 'Login berhasil!', [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/(tabs)'),
-        },
-      ]);
+      // Dummy login for testing
+      if (email.trim() === DUMMY_USER.email && password === DUMMY_PASSWORD) {
+        const dummyToken = 'dummy_token_' + Date.now();
+        await login(DUMMY_USER, dummyToken);
+        Alert.alert('Demo Mode', 'Login berhasil dengan akun demo!', [
+          { text: 'OK', onPress: () => router.replace('/(tabs)') },
+        ]);
+      } else {
+        Alert.alert('Error', 'Email atau password salah.\n\nGunakan akun demo:\nEmail: demo@kuliner.app\nPassword: password123');
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       const message = error.response?.data?.message || 'Login gagal. Periksa email dan password Anda.';
@@ -60,92 +84,150 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <FontAwesome name="cutlery" size={50} color={Colors[colorScheme ?? 'light'].tint} />
-          </View>
-          <Text style={styles.title}>Masuk ke Akun Anda</Text>
-          <Text style={styles.subtitle}>Temukan kuliner terbaik di sekitar Anda</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <FontAwesome name="envelope" size={20} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              placeholderTextColor="#666"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <FontAwesome name="lock" size={20} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, styles.passwordInput]}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              placeholderTextColor="#666"
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <FontAwesome
-                name={showPassword ? 'eye-slash' : 'eye'}
-                size={20}
-                color="#666"
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={[styles.logoContainer, { backgroundColor: colorScheme === 'dark' ? '#1F2937' : '#FFF' }]}>
+              <Image
+                source={require('../../assets/images/logo.jpg')}
+                style={styles.logo}
+                resizeMode="cover"
               />
+            </View>
+            <Text style={[styles.title, { color: colors.text }]}>Selamat Datang</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Masuk untuk melanjutkan
+            </Text>
+          </View>
+
+          {/* Form */}
+          <View style={styles.form}>
+            <View style={[styles.inputContainer, { 
+              backgroundColor: colorScheme === 'dark' ? '#1F2937' : '#F8F9FA',
+              borderColor: colorScheme === 'dark' ? '#374151' : '#E5E7EB',
+            }]}>
+              <Ionicons name="mail-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+
+            <View style={[styles.inputContainer, { 
+              backgroundColor: colorScheme === 'dark' ? '#1F2937' : '#F8F9FA',
+              borderColor: colorScheme === 'dark' ? '#374151' : '#E5E7EB',
+            }]}>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, styles.passwordInput, { color: colors.text }]}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                placeholderTextColor={colors.textSecondary}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.forgotPassword}
+              onPress={() => Alert.alert('Lupa Password', 'Fitur reset password akan segera tersedia.')}
+            >
+              <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>
+                Lupa Password?
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.loginButton, { backgroundColor: colors.primary }, loading && styles.loginButtonDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.loginButtonText}>
+                {loading ? 'Masuk...' : 'Masuk'}
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            <Text style={styles.loginButtonText}>
-              {loading ? 'Masuk...' : 'Masuk'}
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textSecondary }]}>atau</Text>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          </View>
+
+          {/* Social Login */}
+          <View style={styles.socialContainer}>
+            <TouchableOpacity 
+              style={[styles.socialButton, { 
+                backgroundColor: colorScheme === 'dark' ? '#1F2937' : '#FFF',
+                borderColor: colorScheme === 'dark' ? '#374151' : '#E5E7EB',
+              }]}
+              onPress={() => Alert.alert('Google Login', 'Fitur login dengan Google akan segera tersedia.')}
+            >
+              <FontAwesome name="google" size={20} color="#EA4335" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.socialButton, { 
+                backgroundColor: colorScheme === 'dark' ? '#1F2937' : '#FFF',
+                borderColor: colorScheme === 'dark' ? '#374151' : '#E5E7EB',
+              }]}
+              onPress={() => Alert.alert('Apple Login', 'Fitur login dengan Apple akan segera tersedia.')}
+            >
+              <FontAwesome name="apple" size={20} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={[styles.signupText, { color: colors.textSecondary }]}>
+              Belum punya akun?{' '}
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Lupa Password?</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.signupText}>Belum punya akun? </Text>
-          <TouchableOpacity onPress={navigateToRegister}>
-            <Text style={styles.signupLink}>Daftar Sekarang</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <TouchableOpacity onPress={navigateToRegister}>
+              <Text style={[styles.signupLink, { color: colors.primary }]}>Daftar</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 40,
   },
   header: {
     alignItems: 'center',
@@ -154,90 +236,103 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+    fontSize: 26,
+    fontWeight: '700',
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    fontSize: 15,
   },
   form: {
-    marginBottom: 30,
+    marginBottom: 24,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 12,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    marginBottom: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    height: 52,
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   input: {
     flex: 1,
-    height: 50,
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
   },
   passwordInput: {
     paddingRight: 40,
   },
   eyeIcon: {
     position: 'absolute',
-    right: 15,
-    padding: 5,
+    right: 16,
+    padding: 4,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginBottom: 20,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   loginButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 12,
-    height: 50,
+    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
   },
   loginButtonDisabled: {
-    backgroundColor: '#ccc',
+    opacity: 0.6,
   },
   loginButtonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
-  forgotPassword: {
+  dividerContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 15,
+    marginBottom: 24,
   },
-  forgotPasswordText: {
-    color: '#007AFF',
-    fontSize: 14,
+  divider: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 13,
+  },
+  socialContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 32,
+  },
+  socialButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
   },
   footer: {
     flexDirection: 'row',
@@ -246,11 +341,9 @@ const styles = StyleSheet.create({
   },
   signupText: {
     fontSize: 14,
-    color: '#666',
   },
   signupLink: {
     fontSize: 14,
-    color: '#007AFF',
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });
