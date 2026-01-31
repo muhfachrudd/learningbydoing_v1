@@ -103,6 +103,10 @@ function RootLayoutNav() {
         <Stack.Screen name="cuisine/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/settings" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/reviews" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/help" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );
