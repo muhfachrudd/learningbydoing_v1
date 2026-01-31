@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
@@ -9,6 +9,7 @@ import {
   StatusBar,
   Dimensions,
   ScrollView as RNScrollView,
+  ActivityIndicator,
 } from "react-native";
 import {
   FontAwesome,
@@ -53,10 +54,21 @@ export default function VendorDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [menuSectionY, setMenuSectionY] = useState(0);
+  const scrollViewRef = useRef<any>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const router = useRouter();
   const { id } = useLocalSearchParams();
+
+  const handleViewMenu = () => {
+    if (cuisines.length === 0) {
+      Alert.alert('Menu', 'Menu belum tersedia untuk tempat ini.');
+      return;
+    }
+    // Scroll to menu section
+    scrollViewRef.current?.scrollTo({ y: menuSectionY - 100, animated: true });
+  };
 
   const scrollY = useSharedValue(0);
 
@@ -158,24 +170,7 @@ export default function VendorDetailScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
-          <Animated.View entering={FadeInUp.delay(100)}>
-            <LinearGradient
-              colors={[colors.primary, "#FF8533"]}
-              style={styles.loadingIcon}
-            >
-              <MaterialCommunityIcons
-                name="silverware-fork-knife"
-                size={40}
-                color="#FFF"
-              />
-            </LinearGradient>
-          </Animated.View>
-          <Animated.Text
-            entering={FadeInUp.delay(200)}
-            style={[styles.loadingText, { color: colors.text }]}
-          >
-            Memuat data...
-          </Animated.Text>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
@@ -268,6 +263,7 @@ export default function VendorDetailScreen() {
       </TouchableOpacity>
 
       <Animated.ScrollView
+        ref={scrollViewRef}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         contentContainerStyle={styles.scrollContent}
@@ -296,15 +292,27 @@ export default function VendorDetailScreen() {
               <Text style={[styles.vendorName, { color: colors.text }]}>
                 {vendor.name}
               </Text>
-              <View style={styles.categoryBadge}>
-                <MaterialCommunityIcons
-                  name="silverware-fork-knife"
-                  size={12}
-                  color={colors.primary}
-                />
-                <Text style={[styles.categoryText, { color: colors.primary }]}>
-                  Restoran
-                </Text>
+              <View style={styles.badgeRow}>
+                {vendor.is_hidden_gem && (
+                  <View style={styles.hiddenGemBadge}>
+                    <MaterialCommunityIcons
+                      name="diamond-stone"
+                      size={12}
+                      color="#FFD700"
+                    />
+                    <Text style={styles.hiddenGemText}>Hidden Gem</Text>
+                  </View>
+                )}
+                <View style={styles.categoryBadge}>
+                  <MaterialCommunityIcons
+                    name="silverware-fork-knife"
+                    size={12}
+                    color={colors.primary}
+                  />
+                  <Text style={[styles.categoryText, { color: colors.primary }]}>
+                    Restoran
+                  </Text>
+                </View>
               </View>
             </View>
 
@@ -507,6 +515,7 @@ export default function VendorDetailScreen() {
           <Animated.View
             entering={FadeInUp.delay(500)}
             style={styles.menuSection}
+            onLayout={(event) => setMenuSectionY(event.nativeEvent.layout.y + HEADER_HEIGHT - 40)}
           >
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -629,6 +638,7 @@ export default function VendorDetailScreen() {
 
         <TouchableOpacity
           style={[styles.orderButton, { backgroundColor: colors.primary }]}
+          onPress={handleViewMenu}
         >
           <Text style={styles.orderButtonText}>Lihat Menu Lengkap</Text>
           <Ionicons
@@ -745,6 +755,26 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginBottom: 8,
     letterSpacing: -0.5,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  hiddenGemBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  hiddenGemText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#D97706",
   },
   categoryBadge: {
     flexDirection: "row",

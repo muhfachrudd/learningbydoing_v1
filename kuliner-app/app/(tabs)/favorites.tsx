@@ -8,6 +8,7 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -96,14 +97,26 @@ export default function FavoritesScreen() {
   const fetchFavorites = async () => {
     try {
       if (USE_DUMMY_DATA) {
+        // Create mock favorites using vendors instead of cuisines
         const mockFavorites = DUMMY_CUISINES.slice(0, 5).map((cuisine: any, index: number) => ({
           id: index + 1,
           user_id: 1,
-          cuisine_id: cuisine.id,
           vendor_id: cuisine.vendor_id || 1,
-          cuisine: cuisine,
+          vendor: {
+            id: cuisine.vendor_id || 1,
+            name: `Vendor ${cuisine.name}`,
+            address: "Jakarta",
+            latitude: -6.2,
+            longitude: 106.816666,
+            opening_hours: "09:00 - 21:00",
+            price_range: "15.000 - 50.000",
+            cuisine_id: cuisine.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            // Add cuisine data as part of vendor for display
+            cuisine: cuisine,
+          },
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         } as unknown as Favorite));
         
         setFavorites(mockFavorites);
@@ -144,9 +157,10 @@ export default function FavoritesScreen() {
   };
 
   const confirmRemoveFavorite = (favorite: Favorite) => {
+    const cuisine = (favorite.vendor as any)?.cuisine;
     Alert.alert(
       'Hapus Favorit',
-      `Hapus ${favorite.cuisine?.name || 'kuliner ini'} dari daftar favorit?`,
+      `Hapus ${cuisine?.name || 'vendor ini'} dari daftar favorit?`,
       [
         { text: 'Batal', style: 'cancel' },
         { text: 'Hapus', style: 'destructive', onPress: () => removeFavorite(favorite.id) },
@@ -164,7 +178,7 @@ export default function FavoritesScreen() {
 
   /* ================= RENDER ================= */
   const renderFavoriteCard = ({ item, index }: { item: Favorite; index: number }) => {
-    const cuisine = item.cuisine;
+    const cuisine = (item.vendor as any)?.cuisine;
     if (!cuisine) return null;
     
     return (
@@ -234,15 +248,7 @@ export default function FavoritesScreen() {
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Animated.View entering={FadeInUp.springify()}>
-          <FontAwesome name="heart" size={48} color="#EC4899" />
-        </Animated.View>
-        <Animated.Text
-          entering={FadeInUp.delay(200).springify()}
-          style={[styles.loadingText, { color: colors.text }]}
-        >
-          Memuat favorit...
-        </Animated.Text>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -283,11 +289,11 @@ export default function FavoritesScreen() {
 
             <Animated.View entering={FadeInDown.delay(100).springify()}>
               <View style={styles.headerTitleWrap}>
-                <FontAwesome name="heart" size={24} color="#FFF" />
-                <Text style={styles.headerTitle}>Favorit Saya</Text>
+                <MaterialCommunityIcons name="diamond" size={24} color="#FFF" />
+                <Text style={styles.headerTitle}>Gems Tersimpan</Text>
               </View>
               <Text style={styles.headerSubtitle}>
-                {favorites.length} kuliner tersimpan
+                {favorites.length} hidden gems favoritmu
               </Text>
             </Animated.View>
           </LinearGradient>
@@ -298,10 +304,10 @@ export default function FavoritesScreen() {
           <Animated.View entering={FadeInUp.delay(200).springify()}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Koleksi Favoritmu
+                Koleksi Gems-mu
               </Text>
               <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                Kuliner yang paling kamu suka ❤️
+                Hidden gems yang kamu simpan
               </Text>
             </View>
           </Animated.View>
@@ -316,20 +322,20 @@ export default function FavoritesScreen() {
         {favorites.length === 0 && (
           <Animated.View entering={FadeInUp.springify()} style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <FontAwesome name="heart-o" size={64} color={colors.textSecondary} />
+              <MaterialCommunityIcons name="diamond-outline" size={64} color={colors.textSecondary} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              Belum ada favorit
+              Belum ada gems tersimpan
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              Mulai tambahkan kuliner favoritmu dengan{'\n'}menekan ikon ❤️ pada makanan
+              Mulai simpan hidden gems favoritmu{'\n'}dengan menekan ikon 💎 pada tempat kuliner
             </Text>
             <TouchableOpacity 
               style={[styles.exploreBtn, { backgroundColor: colors.primary }]}
               onPress={() => router.push('/')}
               activeOpacity={0.9}
             >
-              <Text style={styles.exploreBtnText}>Jelajahi Kuliner</Text>
+              <Text style={styles.exploreBtnText}>Temukan Hidden Gems</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFF" />
             </TouchableOpacity>
           </Animated.View>

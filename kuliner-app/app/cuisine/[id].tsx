@@ -9,6 +9,8 @@ import {
   Alert,
   StatusBar,
   Share,
+  Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -31,7 +33,7 @@ import {
   Review,
   Cuisine,
 } from '@/services/apiServices';
-import { DUMMY_CUISINES } from '@/services/dummyData';
+import { DUMMY_CUISINES, DUMMY_VENDORS } from '@/services/dummyData';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -190,6 +192,42 @@ const CuisineDetailScreen = () => {
     }
   };
 
+  const handleOrder = () => {
+    // Get vendor info for this cuisine
+    const vendor = DUMMY_VENDORS.find((v) => v.id === cuisine?.vendor_id);
+    
+    if (!vendor) {
+      Alert.alert('Info', 'Informasi vendor tidak tersedia');
+      return;
+    }
+
+    // Show order options
+    Alert.alert(
+      'Pesan Menu Ini',
+      `Hubungi ${vendor.name} untuk memesan ${cuisine?.name}`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'WhatsApp',
+          onPress: () => {
+            const phone = vendor.contact?.replace(/[^0-9]/g, '') || '';
+            const whatsappNumber = phone.startsWith('0') ? '62' + phone.slice(1) : phone;
+            const message = `Halo, saya ingin memesan ${cuisine?.name} (Rp ${cuisine?.price.toLocaleString('id-ID')})`;
+            Linking.openURL(`whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`);
+          },
+        },
+        {
+          text: 'Telepon',
+          onPress: () => {
+            if (vendor.contact) {
+              Linking.openURL(`tel:${vendor.contact}`);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleSubmitReview = () => {
     if (newRating === 0) {
       Alert.alert('Error', 'Pilih rating terlebih dahulu');
@@ -227,20 +265,7 @@ const CuisineDetailScreen = () => {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
-          <Animated.View entering={FadeInUp.delay(100)}>
-            <LinearGradient
-              colors={[colors.primary, '#FF8533']}
-              style={styles.loadingIcon}
-            >
-              <MaterialCommunityIcons name="food" size={40} color="#FFF" />
-            </LinearGradient>
-          </Animated.View>
-          <Animated.Text
-            entering={FadeInUp.delay(200)}
-            style={[styles.loadingText, { color: colors.text }]}
-          >
-            Memuat data...
-          </Animated.Text>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
@@ -532,6 +557,7 @@ const CuisineDetailScreen = () => {
 
         <TouchableOpacity
           style={[styles.orderButton, { backgroundColor: colors.primary }]}
+          onPress={handleOrder}
         >
           <Text style={styles.orderButtonText}>Pesan Sekarang</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFF" style={{ marginLeft: 8 }} />

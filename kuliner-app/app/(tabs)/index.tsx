@@ -8,6 +8,7 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -187,11 +188,23 @@ export default function HomeScreen() {
     });
   }, [vendors, cuisines, searchQuery, selectedCategory]);
 
-  // Hidden Gems - tempat dengan rating tinggi tapi review sedikit
+  // Hidden Gems - Tempat tersembunyi dengan kualitas terbaik
+  // Kriteria: Rating >= 4.5, Review < 100, atau di-flag sebagai hidden_gem
   const hiddenGems = useMemo(() => {
     return vendors
-      .filter((v) => (v.rating || 0) >= 4.5 && (v.reviews_count || 0) < 100)
-      .slice(0, 5);
+      .filter((v) => 
+        v.is_hidden_gem || 
+        ((v.rating || 0) >= 4.5 && (v.reviews_count || 0) < 100)
+      )
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 6);
+  }, [vendors]);
+
+  // Restoran populer - Yang banyak review
+  const popularVendors = useMemo(() => {
+    return vendors
+      .filter((v) => !v.is_hidden_gem && (v.reviews_count || 0) >= 100)
+      .sort((a, b) => (b.reviews_count || 0) - (a.reviews_count || 0));
   }, [vendors]);
 
   /* ================= HANDLERS ================= */
@@ -420,19 +433,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Animated.View entering={FadeInUp.springify()}>
-          <MaterialCommunityIcons
-            name="silverware-fork-knife"
-            size={48}
-            color={colors.primary}
-          />
-        </Animated.View>
-        <Animated.Text
-          entering={FadeInUp.delay(200).springify()}
-          style={[styles.loadingText, { color: colors.text }]}
-        >
-          Memuat data...
-        </Animated.Text>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -479,8 +480,8 @@ export default function HomeScreen() {
               style={styles.headerTop}
             >
               <View style={styles.headerLeft}>
-                <Text style={styles.greeting}>Selamat Datang 👋</Text>
-                <Text style={styles.title}>Mau makan apa hari ini?</Text>
+                <Text style={styles.greeting}>Hidden Gems Finder</Text>
+                <Text style={styles.title}>Temukan kuliner tersembunyi</Text>
               </View>
 
               <TouchableOpacity

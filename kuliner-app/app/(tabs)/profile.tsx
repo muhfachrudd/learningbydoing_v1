@@ -7,6 +7,7 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import {
   FontAwesome,
@@ -257,15 +258,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
-        <Animated.View entering={FadeInUp.springify()}>
-          <FontAwesome name="user-circle" size={48} color={theme.primary} />
-        </Animated.View>
-        <Animated.Text
-          entering={FadeInUp.delay(200).springify()}
-          style={[styles.loadingText, { color: theme.text }]}
-        >
-          Memuat profil...
-        </Animated.Text>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -275,42 +268,42 @@ export default function ProfileScreen() {
       icon: "edit",
       title: "Edit Profil",
       subtitle: "Ubah informasi profil Anda",
-      onPress: () => Alert.alert("Info", "Segera tersedia"),
+      onPress: () => router.push('/profile/edit' as any),
       iconBgColor: "#4F46E5",
     },
     {
-      icon: "heart",
-      title: "Favorit Saya",
-      subtitle: `${stats.totalFavorites} tempat tersimpan`,
-      onPress: () => Alert.alert("Info", "Segera tersedia"),
-      iconBgColor: "#EC4899",
+      icon: "diamond" as any,
+      title: "Hidden Gems Tersimpan",
+      subtitle: `${stats.totalFavorites} gems tersimpan`,
+      onPress: () => router.push('/(tabs)/favorites'),
+      iconBgColor: "#D97706",
     },
     {
       icon: "star",
       title: "Review Saya",
       subtitle: `${stats.totalReviews} ulasan ditulis`,
-      onPress: () => Alert.alert("Info", "Segera tersedia"),
+      onPress: () => router.push('/profile/reviews' as any),
       iconBgColor: "#F59E0B",
     },
     {
       icon: "cog",
       title: "Pengaturan",
       subtitle: "Kelola preferensi aplikasi",
-      onPress: () => Alert.alert("Info", "Segera tersedia"),
+      onPress: () => router.push('/profile/settings' as any),
       iconBgColor: "#6B7280",
     },
     {
       icon: "question-circle",
       title: "Bantuan",
       subtitle: "FAQ dan dukungan",
-      onPress: () => Alert.alert("Info", "Segera tersedia"),
+      onPress: () => router.push('/profile/help' as any),
       iconBgColor: "#10B981",
     },
     {
       icon: "info-circle",
       title: "Tentang Aplikasi",
       subtitle: "Versi 1.0.0",
-      onPress: () => Alert.alert("Kuliner App", "Versi 1.0.0\n© 2026"),
+      onPress: () => Alert.alert("Hidden Gems Finder", "Versi 1.0.0\n\nTemukan kuliner tersembunyi berkualitas tinggi di sekitarmu!\n\n© 2026 Hidden Gems Finder"),
       iconBgColor: "#3B82F6",
     },
   ];

@@ -9,6 +9,7 @@ import {
   TextInput,
   StatusBar,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { FontAwesome, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -48,6 +49,7 @@ export default function VendorsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [showOnlyGems, setShowOnlyGems] = useState(false);
 
   /* ================= ANIMATION VALUES ================= */
   const scrollY = useSharedValue(0);
@@ -128,9 +130,11 @@ export default function VendorsScreen() {
     fetchVendors();
   };
 
-  const filteredVendors = vendors.filter((v) =>
-    v.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredVendors = vendors.filter((v) => {
+    const matchesSearch = v.name.toLowerCase().includes(search.toLowerCase());
+    const matchesGemFilter = showOnlyGems ? v.is_hidden_gem : true;
+    return matchesSearch && matchesGemFilter;
+  });
 
   /* ================= HANDLERS ================= */
   const handleSearchFocus = () => {
@@ -166,6 +170,13 @@ export default function VendorsScreen() {
             colors={["transparent", "rgba(0,0,0,0.7)"]}
             style={styles.cardOverlay}
           />
+          {/* Hidden Gem Badge */}
+          {item.is_hidden_gem && (
+            <View style={styles.gemBadge}>
+              <MaterialCommunityIcons name="diamond-stone" size={12} color="#FFD700" />
+              <Text style={styles.gemBadgeText}>Gem</Text>
+            </View>
+          )}
           <View style={styles.ratingBadge}>
             <FontAwesome name="star" size={12} color="#FFD700" />
             <Text style={styles.ratingText}>
@@ -185,12 +196,17 @@ export default function VendorsScreen() {
             </Text>
           </View>
           <View style={styles.cardFooter}>
+            <View style={styles.reviewCount}>
+              <Ionicons name="chatbubble-outline" size={12} color={colors.textSecondary} />
+              <Text style={[styles.reviewCountText, { color: colors.textSecondary }]}>
+                {item.reviews_count || 0}
+              </Text>
+            </View>
             <View style={[styles.priceBadge, { backgroundColor: colors.secondPrimary }]}>
               <Text style={[styles.priceText, { color: colors.primary }]}>
                 {item.price_range}
               </Text>
             </View>
-            <Ionicons name="arrow-forward-circle" size={22} color={colors.primary} />
           </View>
         </View>
       </TouchableOpacity>
@@ -200,15 +216,7 @@ export default function VendorsScreen() {
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Animated.View entering={FadeInUp.springify()}>
-          <MaterialCommunityIcons name="store" size={48} color={colors.primary} />
-        </Animated.View>
-        <Animated.Text
-          entering={FadeInUp.delay(200).springify()}
-          style={[styles.loadingText, { color: colors.text }]}
-        >
-          Memuat vendor...
-        </Animated.Text>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -249,11 +257,11 @@ export default function VendorsScreen() {
 
             <Animated.View entering={FadeInDown.delay(100).springify()}>
               <View style={styles.headerTitleWrap}>
-                <MaterialCommunityIcons name="store" size={28} color="#FFF" />
-                <Text style={styles.headerTitle}>Semua Restoran</Text>
+                <MaterialCommunityIcons name="map-marker-radius" size={28} color="#FFF" />
+                <Text style={styles.headerTitle}>Jelajahi Tempat</Text>
               </View>
               <Text style={styles.headerSubtitle}>
-                Temukan {vendors.length}+ tempat makan terbaik
+                {vendors.filter(v => v.is_hidden_gem).length} Hidden Gems dari {vendors.length} tempat
               </Text>
             </Animated.View>
 
@@ -296,12 +304,35 @@ export default function VendorsScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {/* ================= GRID ================= */}
+        {/* ================= FILTER & GRID ================= */}
         <Animated.View entering={FadeInUp.delay(300).springify()}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {filteredVendors.length} Restoran Ditemukan
+              {filteredVendors.length} Tempat Ditemukan
             </Text>
+            <TouchableOpacity
+              style={[
+                styles.gemFilterBtn,
+                showOnlyGems && { backgroundColor: "#FFD70020", borderColor: "#FFD700" },
+                !showOnlyGems && { borderColor: colors.border },
+              ]}
+              onPress={() => setShowOnlyGems(!showOnlyGems)}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons
+                name="diamond-stone"
+                size={16}
+                color={showOnlyGems ? "#FFD700" : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.gemFilterText,
+                  { color: showOnlyGems ? "#DAA520" : colors.textSecondary },
+                ]}
+              >
+                Hidden Gems
+              </Text>
+            </TouchableOpacity>
           </View>
         </Animated.View>
 
@@ -313,12 +344,12 @@ export default function VendorsScreen() {
 
         {filteredVendors.length === 0 && (
           <Animated.View entering={FadeInUp.springify()} style={styles.emptyState}>
-            <MaterialCommunityIcons name="store-off" size={64} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="diamond-outline" size={64} color={colors.textSecondary} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              Tidak ada restoran
+              {showOnlyGems ? "Belum ada Hidden Gems" : "Tidak ada tempat ditemukan"}
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              Coba kata kunci lain
+              {showOnlyGems ? "Coba nonaktifkan filter Hidden Gems" : "Coba kata kunci lain"}
             </Text>
           </Animated.View>
         )}
@@ -431,11 +462,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 16,
     marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
+  },
+
+  gemFilterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 6,
+  },
+
+  gemFilterText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
 
   /* Grid */
@@ -492,6 +541,25 @@ const styles = StyleSheet.create({
     gap: 4,
   },
 
+  gemBadge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 4,
+  },
+
+  gemBadgeText: {
+    color: "#FFD700",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+
   ratingText: {
     color: "#FFF",
     fontSize: 12,
@@ -524,6 +592,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+
+  reviewCount: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  reviewCountText: {
+    fontSize: 11,
+    fontWeight: "500",
   },
 
   priceBadge: {
