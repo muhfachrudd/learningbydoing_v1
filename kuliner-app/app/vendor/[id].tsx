@@ -1,27 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  ScrollView,
-  TouchableOpacity, 
-  Image, 
+﻿import React, { useState, useEffect, useCallback } from "react";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  Image,
   Alert,
   RefreshControl,
-  SafeAreaView,
   Linking,
-  FlatList
-} from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+  StatusBar,
+  Dimensions,
+  ScrollView as RNScrollView,
+} from "react-native";
+import {
+  FontAwesome,
+  Ionicons,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeInRight,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  interpolate,
+  Extrapolation,
+} from "react-native-reanimated";
 
-import { Text, View } from '@/components/Themed';
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { vendorService, cuisineService, Vendor, Cuisine } from '@/services/apiServices';
-import { dummyService } from '@/services/dummyData';
+import { Text, View } from "@/components/Themed";
+import Colors from "@/constants/Colors";
+import { useColorScheme } from "@/components/useColorScheme";
+import {
+  vendorService,
+  cuisineService,
+  Vendor,
+  Cuisine,
+} from "@/services/apiServices";
+import { dummyService } from "@/services/dummyData";
 
+const { width, height } = Dimensions.get("window");
+const HEADER_HEIGHT = 350;
 const USE_DUMMY_DATA = true;
 
-// Export options to hide header
 export const options = {
   headerShown: false,
 };
@@ -31,55 +52,73 @@ export default function VendorDetailScreen() {
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
   const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? "light"];
   const router = useRouter();
   const { id } = useLocalSearchParams();
+
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT],
+      [0, -HEADER_HEIGHT],
+      Extrapolation.CLAMP,
+    );
+    const opacity = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT / 2],
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
+    const scale = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT],
+      [1, 0.9],
+      Extrapolation.CLAMP,
+    );
+    return {
+      transform: [{ translateY }, { scale }],
+      opacity,
+    };
+  });
 
   const fetchVendorData = async () => {
     try {
       if (!id) return;
-      
+
       const vendorId = parseInt(id as string);
-      console.log('Fetching vendor data for ID:', vendorId);
-      
+
       if (USE_DUMMY_DATA) {
-        console.log('Using DUMMY DATA for Vendor Detail');
         const [vendorResponse, cuisinesResponse] = await Promise.all([
           dummyService.getVendorById(vendorId),
-          dummyService.getAllCuisines()
+          dummyService.getAllCuisines(),
         ]);
 
-        console.log('Vendor response:', vendorResponse.data);
         setVendor(vendorResponse.data.data || null);
-        
-        // Filter cuisines for this vendor
         const allCuisines = cuisinesResponse.data.data || [];
-        const vendorCuisines = allCuisines.filter(cuisine => 
-          cuisine.vendors?.some(v => v.id === vendorId) ||
-          vendorResponse.data.data?.cuisine_id === cuisine.id
-        );
-        setCuisines(vendorCuisines);
+        setCuisines(allCuisines.slice(0, 5));
       } else {
         const [vendorResponse, cuisinesResponse] = await Promise.all([
           vendorService.getById(vendorId),
-          cuisineService.getAll()
+          cuisineService.getAll(),
         ]);
-        
-        console.log('Vendor response:', vendorResponse.data);
+
         setVendor(vendorResponse.data.data);
-        
-        // Filter cuisines for this vendor
         const allCuisines = cuisinesResponse.data.data || [];
-        const vendorCuisines = allCuisines.filter(cuisine => 
-          cuisine.vendors?.some(v => v.id === vendorId) ||
-          vendorResponse.data.data.cuisine_id === cuisine.id
-        );
-        setCuisines(vendorCuisines);
+        setCuisines(allCuisines.slice(0, 5));
       }
-      
     } catch (error: any) {
-      console.error('Error fetching vendor data:', error);
-      Alert.alert('Error', 'Gagal memuat data vendor. Pastikan server backend berjalan.');
+      console.error("Error fetching vendor data:", error);
+      Alert.alert("Error", "Gagal memuat data vendor.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -90,10 +129,10 @@ export default function VendorDetailScreen() {
     fetchVendorData();
   }, [id]);
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchVendorData();
-  };
+  }, []);
 
   const handleCall = () => {
     if (vendor?.contact) {
@@ -105,311 +144,797 @@ export default function VendorDetailScreen() {
     if (vendor?.latitude && vendor?.longitude) {
       const url = `https://maps.google.com/?q=${vendor.latitude},${vendor.longitude}`;
       Linking.openURL(url);
+    } else if (vendor?.address) {
+      const url = `https://maps.google.com/?q=${encodeURIComponent(vendor.address)}`;
+      Linking.openURL(url);
     }
   };
 
-  const renderCuisineCard = ({ item }: { item: Cuisine }) => (
-    <TouchableOpacity 
-      style={styles.cuisineCard}
-      onPress={() => router.push(`/cuisine/${item.id}` as any)}
-    >
-      {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.cuisineImage} />
-      ) : (
-        <View style={[styles.cuisineImage, styles.placeholderImage]}>
-          <FontAwesome name="cutlery" size={20} color="#D4761A" />
-        </View>
-      )}
-      <View style={styles.cuisineContent}>
-        <Text style={styles.cuisineName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.cuisineCategory} numberOfLines={1}>{item.category}</Text>
-        <Text style={styles.cuisineOrigin} numberOfLines={1}>{item.origin_region}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const toggleFavorite = () => {
+    setIsFavorite(!isFavorite);
+  };
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
-          <Text>Memuat data vendor...</Text>
+          <Animated.View entering={FadeInUp.delay(100)}>
+            <LinearGradient
+              colors={[colors.primary, "#FF8533"]}
+              style={styles.loadingIcon}
+            >
+              <MaterialCommunityIcons
+                name="silverware-fork-knife"
+                size={40}
+                color="#FFF"
+              />
+            </LinearGradient>
+          </Animated.View>
+          <Animated.Text
+            entering={FadeInUp.delay(200)}
+            style={[styles.loadingText, { color: colors.text }]}
+          >
+            Memuat data...
+          </Animated.Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!vendor) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.errorContainer}>
-          <FontAwesome name="exclamation-triangle" size={50} color="#D4761A" />
-          <Text style={styles.errorText}>Vendor tidak ditemukan</Text>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>Kembali</Text>
-          </TouchableOpacity>
+          <Animated.View entering={FadeInDown.delay(100)}>
+            <LinearGradient
+              colors={["#FEE2E2", "#FECACA"]}
+              style={styles.errorIconContainer}
+            >
+              <FontAwesome
+                name="exclamation-triangle"
+                size={50}
+                color="#EF4444"
+              />
+            </LinearGradient>
+          </Animated.View>
+          <Animated.Text
+            entering={FadeInDown.delay(200)}
+            style={[styles.errorText, { color: colors.text }]}
+          >
+            Vendor tidak ditemukan
+          </Animated.Text>
+          <Animated.View entering={FadeInDown.delay(300)}>
+            <TouchableOpacity
+              style={[
+                styles.errorBackButton,
+                { backgroundColor: colors.primary },
+              ]}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.errorBackButtonText}>Kembali</Text>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.headerBackButton}
-            onPress={() => router.back()}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" />
+
+      <Animated.View style={[styles.headerImageContainer, headerAnimatedStyle]}>
+        {vendor.image_url ? (
+          <Image
+            source={{ uri: vendor.image_url }}
+            style={styles.headerImage}
+          />
+        ) : (
+          <LinearGradient
+            colors={[colors.primary, "#FF8533"]}
+            style={[styles.headerImage, styles.headerPlaceholder]}
           >
-            <FontAwesome name="arrow-left" size={20} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Detail Vendor</Text>
-        </View>
+            <FontAwesome
+              name="cutlery"
+              size={80}
+              color="rgba(255,255,255,0.3)"
+            />
+          </LinearGradient>
+        )}
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.7)"]}
+          style={styles.headerGradient}
+        />
 
-        {/* Vendor Image */}
-        <View style={styles.imageContainer}>
-          {vendor.image_url ? (
-            <Image source={{ uri: vendor.image_url }} style={styles.vendorImage} />
-          ) : (
-            <View style={[styles.vendorImage, styles.placeholderImage]}>
-              <FontAwesome name="cutlery" size={60} color="#D4761A" />
+        <Animated.View
+          entering={FadeInUp.delay(300)}
+          style={styles.decorCircle1}
+        />
+        <Animated.View
+          entering={FadeInUp.delay(400)}
+          style={styles.decorCircle2}
+        />
+      </Animated.View>
+
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.shareButton}>
+        <Ionicons name="share-social-outline" size={22} color="#1A1A1A" />
+      </TouchableOpacity>
+
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        <View
+          style={[
+            styles.contentContainer,
+            { backgroundColor: colors.background },
+          ]}
+        >
+          <View style={styles.indicatorPill} />
+
+          <Animated.View
+            entering={FadeInUp.delay(100)}
+            style={styles.vendorHeader}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.vendorName, { color: colors.text }]}>
+                {vendor.name}
+              </Text>
+              <View style={styles.categoryBadge}>
+                <MaterialCommunityIcons
+                  name="silverware-fork-knife"
+                  size={12}
+                  color={colors.primary}
+                />
+                <Text style={[styles.categoryText, { color: colors.primary }]}>
+                  Restoran
+                </Text>
+              </View>
             </View>
-          )}
-        </View>
 
-        {/* Vendor Info */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.vendorName}>{vendor.name}</Text>
-          
-          <View style={styles.ratingContainer}>
-            <FontAwesome name="star" size={16} color="#FFD700" />
-            <Text style={styles.ratingText}>{vendor.rating ? vendor.rating.toFixed(1) : '4.5'}</Text>
-            <Text style={styles.reviewCount}>({vendor.reviews_count || 0} reviews)</Text>
-          </View>
+            <View style={styles.openBadge}>
+              <View style={styles.openDot} />
+              <Text style={styles.openText}>Buka</Text>
+            </View>
+          </Animated.View>
 
-          <View style={styles.detailItem}>
-            <FontAwesome name="map-marker" size={16} color="#D4761A" />
-            <Text style={styles.detailText}>{vendor.address}</Text>
-            <TouchableOpacity style={styles.actionButton} onPress={handleOpenMaps}>
-              <Text style={styles.actionButtonText}>Buka Map</Text>
+          <Animated.View
+            entering={FadeInUp.delay(200)}
+            style={[
+              styles.statsRow,
+              {
+                backgroundColor: colorScheme === "dark" ? "#1F2937" : "#F8F9FA",
+              },
+            ]}
+          >
+            <View style={styles.statItem}>
+              <View style={styles.ratingBadge}>
+                <FontAwesome name="star" size={12} color="#FFF" />
+                <Text style={styles.ratingValue}>
+                  {vendor.rating?.toFixed(1) || "4.5"}
+                </Text>
+              </View>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                {vendor.reviews_count || 128} ulasan
+              </Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Ionicons
+                name="time-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                20-30 min
+              </Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons
+                name="cash"
+                size={20}
+                color={colors.textSecondary}
+              />
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                {vendor.price_range || "Rp 20-50k"}
+              </Text>
+            </View>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInUp.delay(300)}
+            style={styles.actionRow}
+          >
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: colors.primary }]}
+              onPress={handleOpenMaps}
+            >
+              <Ionicons name="navigate" size={20} color="#FFF" />
+              <Text style={styles.actionBtnText}>Petunjuk Arah</Text>
             </TouchableOpacity>
-          </View>
 
-          {vendor.contact && (
-            <View style={styles.detailItem}>
-              <FontAwesome name="phone" size={16} color="#D4761A" />
-              <Text style={styles.detailText}>{vendor.contact}</Text>
-              <TouchableOpacity style={styles.actionButton} onPress={handleCall}>
-                <Text style={styles.actionButtonText}>Telepon</Text>
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                styles.actionBtnOutline,
+                { borderColor: colors.primary },
+              ]}
+              onPress={handleCall}
+            >
+              <Ionicons name="call" size={20} color={colors.primary} />
+              <Text
+                style={[styles.actionBtnTextOutline, { color: colors.primary }]}
+              >
+                Telepon
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInUp.delay(400)}
+            style={styles.infoSection}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Informasi
+            </Text>
+
+            <View
+              style={[
+                styles.infoCard,
+                {
+                  backgroundColor:
+                    colorScheme === "dark" ? "#1F2937" : "#F8F9FA",
+                },
+              ]}
+            >
+              <View style={styles.infoRow}>
+                <View
+                  style={[
+                    styles.infoIconContainer,
+                    {
+                      backgroundColor:
+                        colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="location"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text
+                    style={[styles.infoLabel, { color: colors.textSecondary }]}
+                  >
+                    Alamat
+                  </Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>
+                    {vendor.address}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.infoDivider} />
+
+              <View style={styles.infoRow}>
+                <View
+                  style={[
+                    styles.infoIconContainer,
+                    {
+                      backgroundColor:
+                        colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="time"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text
+                    style={[styles.infoLabel, { color: colors.textSecondary }]}
+                  >
+                    Jam Operasional
+                  </Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>
+                    {vendor.opening_hours || "08:00 - 22:00"}
+                  </Text>
+                </View>
+              </View>
+
+              {vendor.contact && (
+                <>
+                  <View style={styles.infoDivider} />
+                  <View style={styles.infoRow}>
+                    <View
+                      style={[
+                        styles.infoIconContainer,
+                        {
+                          backgroundColor:
+                            colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name="call"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                    </View>
+                    <View style={styles.infoContent}>
+                      <Text
+                        style={[
+                          styles.infoLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Kontak
+                      </Text>
+                      <Text style={[styles.infoValue, { color: colors.text }]}>
+                        {vendor.contact}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              )}
+            </View>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInUp.delay(500)}
+            style={styles.menuSection}
+          >
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Menu Populer
+              </Text>
+              <TouchableOpacity>
+                <Text style={[styles.seeAllText, { color: colors.primary }]}>
+                  Lihat Semua
+                </Text>
               </TouchableOpacity>
             </View>
-          )}
 
-          <View style={styles.detailItem}>
-            <FontAwesome name="clock-o" size={16} color="#D4761A" />
-            <Text style={styles.detailText}>{vendor.opening_hours || 'Jam buka tidak tersedia'}</Text>
-          </View>
+            {cuisines.length > 0 ? (
+              <RNScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.menuList}
+              >
+                {cuisines.map((item, index) => (
+                  <Animated.View
+                    key={item.id}
+                    entering={FadeInRight.delay(100 * index)}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.menuCard,
+                        {
+                          backgroundColor:
+                            colorScheme === "dark" ? "#1F2937" : "#FFF",
+                        },
+                      ]}
+                      onPress={() => router.push(`/cuisine/${item.id}` as any)}
+                    >
+                      {item.image_url ? (
+                        <Image
+                          source={{ uri: item.image_url }}
+                          style={styles.menuImage}
+                        />
+                      ) : (
+                        <View
+                          style={[
+                            styles.menuImage,
+                            styles.menuPlaceholder,
+                            {
+                              backgroundColor:
+                                colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                            },
+                          ]}
+                        >
+                          <FontAwesome
+                            name="cutlery"
+                            size={24}
+                            color={colors.textSecondary}
+                          />
+                        </View>
+                      )}
+                      <View style={styles.menuContent}>
+                        <Text
+                          style={[styles.menuName, { color: colors.text }]}
+                          numberOfLines={1}
+                        >
+                          {item.name}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.menuCategory,
+                            { color: colors.textSecondary },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {item.category}
+                        </Text>
+                        <Text
+                          style={[styles.menuPrice, { color: colors.text }]}
+                        >
+                          Rp {item.price?.toLocaleString("id-ID") || "0"}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </Animated.View>
+                ))}
+              </RNScrollView>
+            ) : (
+              <View style={styles.emptyMenu}>
+                <MaterialCommunityIcons
+                  name="food-off"
+                  size={40}
+                  color={colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.emptyMenuText,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Belum ada menu tersedia
+                </Text>
+              </View>
+            )}
+          </Animated.View>
 
-          <View style={styles.detailItem}>
-            <FontAwesome name="money" size={16} color="#D4761A" />
-            <Text style={styles.detailText}>{vendor.price_range || 'Harga tidak tersedia'}</Text>
-          </View>
+          <View style={{ height: 120 }} />
         </View>
+      </Animated.ScrollView>
 
-        {/* Menu Section */}
-        <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>Menu Tersedia</Text>
-          {cuisines.length > 0 ? (
-            <FlatList
-              data={cuisines}
-              renderItem={renderCuisineCard}
-              keyExtractor={(item) => `cuisine-${item.id}`}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.menuList}
-            />
-          ) : (
-            <View style={styles.emptyMenu}>
-              <FontAwesome name="cutlery" size={30} color="#D4761A" />
-              <Text style={styles.emptyMenuText}>Belum ada menu tersedia</Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <Animated.View
+        entering={FadeInUp.delay(600)}
+        style={[styles.bottomBar, { backgroundColor: colors.background }]}
+      >
+        <TouchableOpacity
+          style={[styles.favButton, isFavorite && styles.favButtonActive]}
+          onPress={toggleFavorite}
+        >
+          <FontAwesome
+            name={isFavorite ? "heart" : "heart-o"}
+            size={22}
+            color={isFavorite ? "#FFF" : colors.primary}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.orderButton, { backgroundColor: colors.primary }]}
+        >
+          <Text style={styles.orderButtonText}>Lihat Menu Lengkap</Text>
+          <Ionicons
+            name="arrow-forward"
+            size={18}
+            color="#FFF"
+            style={{ marginLeft: 8 }}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
+  container: { flex: 1 },
+  headerImageContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: HEADER_HEIGHT,
+    zIndex: 0,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#D4761A',
+  headerImage: { width: "100%", height: "100%", resizeMode: "cover" },
+  headerPlaceholder: { justifyContent: "center", alignItems: "center" },
+  headerGradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 150,
   },
-  headerBackButton: {
-    marginRight: 15,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  imageContainer: {
-    height: 300,
-    backgroundColor: '#f0f0f0',
-  },
-  vendorImage: {
-    width: '100%',
-    height: '100%',
-  },
-  placeholderImage: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-  },
-  infoContainer: {
-    padding: 20,
-  },
-  vendorName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  ratingText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 5,
-    color: '#333',
-  },
-  reviewCount: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 5,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  detailText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 15,
-  },
-  actionButton: {
-    backgroundColor: '#D4761A',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  menuSection: {
-    padding: 20,
-    paddingTop: 10,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-  },
-  menuList: {
-    paddingRight: 20,
-  },
-  cuisineCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginRight: 15,
-    width: 150,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-  },
-  cuisineImage: {
-    width: '100%',
+  decorCircle1: {
+    position: "absolute",
+    top: 60,
+    right: -30,
+    width: 100,
     height: 100,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderRadius: 50,
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
-  cuisineContent: {
-    padding: 10,
-  },
-  cuisineName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  cuisineCategory: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 2,
-  },
-  cuisineOrigin: {
-    fontSize: 11,
-    color: '#D4761A',
-    fontWeight: '500',
-  },
-  emptyMenu: {
-    alignItems: 'center',
-    paddingVertical: 30,
-  },
-  emptyMenuText: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 10,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    color: '#333',
-    marginVertical: 20,
+  decorCircle2: {
+    position: "absolute",
+    top: 120,
+    right: 40,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
   backButton: {
-    backgroundColor: '#D4761A',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    position: "absolute",
+    top: 50,
+    left: 20,
+    width: 44,
+    height: 44,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  shareButton: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    width: 44,
+    height: 44,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
+  scrollContent: { paddingTop: HEADER_HEIGHT - 40, flexGrow: 1 },
+  contentContainer: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    minHeight: height,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  indicatorPill: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  vendorHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 20,
+  },
+  vendorName: {
+    fontSize: 26,
+    fontWeight: "800",
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  categoryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF5EB",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+  },
+  categoryText: { fontSize: 12, fontWeight: "600", marginLeft: 4 },
+  openBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#D1FAE5",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  openDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#10B981",
+    marginRight: 6,
+  },
+  openText: { fontSize: 12, fontWeight: "600", color: "#10B981" },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    backgroundColor: "#F9FAFB",
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  statItem: { flex: 1, alignItems: "center" },
+  ratingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F59E0B",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  ratingValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFF",
+    marginLeft: 4,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  statLabel: { fontSize: 12, marginTop: 6, fontWeight: "500" },
+  statDivider: { width: 1, height: 40, backgroundColor: "#E5E7EB" },
+  actionRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 8,
+  },
+  actionBtnOutline: { backgroundColor: "transparent", borderWidth: 2 },
+  actionBtnText: { fontSize: 14, fontWeight: "600", color: "#FFF" },
+  actionBtnTextOutline: { fontSize: 14, fontWeight: "600" },
+  infoSection: { marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 16 },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  seeAllText: { fontSize: 14, fontWeight: "600" },
+  infoCard: { borderRadius: 16, padding: 16 },
+  infoRow: { flexDirection: "row", alignItems: "center" },
+  infoIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  infoContent: { flex: 1 },
+  infoLabel: { fontSize: 12, marginBottom: 2 },
+  infoValue: { fontSize: 15, fontWeight: "600" },
+  infoDivider: {
+    height: 1,
+    backgroundColor: "#E5E7EB",
+    marginVertical: 14,
+    marginLeft: 58,
+  },
+  menuSection: { marginBottom: 24 },
+  menuList: { paddingRight: 24, paddingVertical: 4 },
+  menuCard: {
+    width: 150,
+    borderRadius: 12,
+    marginRight: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  menuImage: { width: "100%", height: 100 },
+  menuPlaceholder: { justifyContent: "center", alignItems: "center" },
+  menuContent: { padding: 12 },
+  menuName: { fontSize: 14, fontWeight: "600", marginBottom: 4 },
+  menuCategory: { fontSize: 12, marginBottom: 6 },
+  menuPrice: { fontSize: 14, fontWeight: "600" },
+  emptyMenu: {
+    alignItems: "center",
+    paddingVertical: 40,
+    backgroundColor: "#F9FAFB",
+    borderRadius: 16,
+  },
+  emptyMenuText: { fontSize: 14, marginTop: 12 },
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    paddingBottom: 34,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  favButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  favButtonActive: { backgroundColor: "#EF4444", borderColor: "#EF4444" },
+  orderButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  orderButtonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: { fontSize: 16, fontWeight: "500" },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  errorIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  errorText: { fontSize: 18, fontWeight: "600", marginBottom: 24 },
+  errorBackButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  errorBackButtonText: { color: "#FFF", fontWeight: "700", fontSize: 16 },
 });

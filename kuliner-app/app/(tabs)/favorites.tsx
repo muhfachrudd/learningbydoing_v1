@@ -1,14 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
-  FlatList, 
   TouchableOpacity, 
   Image, 
   Alert,
-  RefreshControl 
+  RefreshControl,
+  Dimensions,
+  StatusBar,
+  Platform,
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeInRight,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  interpolate,
+  Extrapolation,
+  withSpring,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { DUMMY_CUISINES } from '@/services/dummyData';
 import { Text, View } from '@/components/Themed';
@@ -16,24 +32,75 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { favoriteService, Favorite } from '@/services/apiServices';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const HEADER_HEIGHT = 180;
+
 export default function FavoritesScreen() {
+  const router = useRouter();
+  const scheme = useColorScheme();
+  const colors = Colors[scheme ?? 'light'];
+  const isDark = scheme === 'dark';
+
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const colorScheme = useColorScheme();
-  const router = useRouter();
 
-const USE_DUMMY_DATA = true;
+  const USE_DUMMY_DATA = true;
 
+  /* ================= ANIMATION VALUES ================= */
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  /* ================= ANIMATED STYLES ================= */
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT],
+      [0, -HEADER_HEIGHT],
+      Extrapolation.CLAMP
+    );
+    const opacity = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT * 0.6],
+      [1, 0],
+      Extrapolation.CLAMP
+    );
+    const scale = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT],
+      [1, 0.9],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ translateY }, { scale }],
+      opacity,
+    };
+  });
+
+  const decorCircle1Style = useAnimatedStyle(() => {
+    const rotate = interpolate(scrollY.value, [0, 500], [0, 45]);
+    return { transform: [{ rotate: `${rotate}deg` }] };
+  });
+
+  const decorCircle2Style = useAnimatedStyle(() => {
+    const rotate = interpolate(scrollY.value, [0, 500], [0, -30]);
+    return { transform: [{ rotate: `${rotate}deg` }] };
+  });
+
+  /* ================= DATA ================= */
   const fetchFavorites = async () => {
     try {
       if (USE_DUMMY_DATA) {
-        // Mock favorites mapped from dummy cuisines
-        const mockFavorites = DUMMY_CUISINES.slice(0, 3).map((cuisine: any, index: number) => ({
+        const mockFavorites = DUMMY_CUISINES.slice(0, 5).map((cuisine: any, index: number) => ({
           id: index + 1,
           user_id: 1,
           cuisine_id: cuisine.id,
-          vendor_id: 1,
+          vendor_id: cuisine.vendor_id || 1,
           cuisine: cuisine,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -46,7 +113,6 @@ const USE_DUMMY_DATA = true;
       const response = await favoriteService.getAll();
       setFavorites(response.data.data || []);
     } catch (error) {
-      console.error('Error fetching favorites:', error);
       Alert.alert('Error', 'Gagal memuat data favorit');
     } finally {
       setLoading(false);
@@ -67,16 +133,12 @@ const USE_DUMMY_DATA = true;
     try {
       if (USE_DUMMY_DATA) {
         setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
-        Alert.alert('Berhasil', 'Kuliner telah dihapus dari favorit (Dummy)');
         return;
       }
 
       await favoriteService.remove(favoriteId);
-      
       setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
-      Alert.alert('Berhasil', 'Kuliner telah dihapus dari favorit');
     } catch (error) {
-      console.error('Error removing favorite:', error);
       Alert.alert('Error', 'Gagal menghapus dari favorit');
     }
   };
@@ -86,15 +148,8 @@ const USE_DUMMY_DATA = true;
       'Hapus Favorit',
       `Hapus ${favorite.cuisine?.name || 'kuliner ini'} dari daftar favorit?`,
       [
-        {
-          text: 'Batal',
-          style: 'cancel',
-        },
-        {
-          text: 'Hapus',
-          style: 'destructive',
-          onPress: () => removeFavorite(favorite.id),
-        },
+        { text: 'Batal', style: 'cancel' },
+        { text: 'Hapus', style: 'destructive', onPress: () => removeFavorite(favorite.id) },
       ]
     );
   };
@@ -107,201 +162,423 @@ const USE_DUMMY_DATA = true;
     }).format(price);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  const renderFavoriteCard = ({ item }: { item: Favorite }) => {
+  /* ================= RENDER ================= */
+  const renderFavoriteCard = ({ item, index }: { item: Favorite; index: number }) => {
     const cuisine = item.cuisine;
     if (!cuisine) return null;
     
     return (
-      <TouchableOpacity 
-        style={styles.card}
-        onPress={() => router.push(`/cuisine/${cuisine.id}` as any)}
-      >
-        <View style={styles.cardContent}>
-          {cuisine.image_url ? (
-            <Image source={{ uri: cuisine.image_url }} style={styles.cuisineImage} />
-          ) : (
-            <View style={[styles.cuisineImage, styles.placeholderImage]}>
-              <FontAwesome name="cutlery" size={20} color={Colors[colorScheme ?? 'light'].tabIconDefault} />
-            </View>
-          )}
-          <View style={styles.cuisineInfo}>
-            <View style={styles.cuisineHeader}>
-              <Text style={styles.cuisineName} numberOfLines={1}>{cuisine.name}</Text>
+      <Animated.View entering={FadeInRight.delay(index * 100).springify()}>
+        <TouchableOpacity 
+          style={[styles.card, { backgroundColor: colors.surface }]}
+          onPress={() => router.push(`/cuisine/${cuisine.id}` as any)}
+          activeOpacity={0.9}
+        >
+          <View style={styles.cardImageWrap}>
+            {cuisine.image_url ? (
+              <Image source={{ uri: cuisine.image_url }} style={styles.cuisineImage} />
+            ) : (
+              <LinearGradient
+                colors={[colors.primary, colors.tint]}
+                style={styles.placeholderImage}
+              >
+                <FontAwesome name="cutlery" size={24} color="#FFF" />
+              </LinearGradient>
+            )}
+          </View>
+
+          <View style={styles.cardContent}>
+            <View style={styles.cardHeader}>
+              <View style={styles.cardTitleWrap}>
+                <Text style={[styles.cuisineName, { color: colors.text }]} numberOfLines={1}>
+                  {cuisine.name}
+                </Text>
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryText}>{cuisine.category}</Text>
+                </View>
+              </View>
               <TouchableOpacity 
                 onPress={() => confirmRemoveFavorite(item)}
                 style={styles.heartButton}
+                activeOpacity={0.7}
               >
-                <FontAwesome name="heart" size={20} color="#e74c3c" />
+                <Animated.View>
+                  <FontAwesome name="heart" size={22} color="#EC4899" />
+                </Animated.View>
               </TouchableOpacity>
             </View>
-            <Text style={styles.vendorName} numberOfLines={1}>{cuisine.vendor?.name || 'Vendor tidak diketahui'}</Text>
-            <Text style={styles.vendorAddress} numberOfLines={1}>{cuisine.vendor?.address || 'Alamat tidak diketahui'}</Text>
-            <View style={styles.bottomInfo}>
-              <Text style={styles.price}>{formatPrice(cuisine.price)}</Text>
-              <Text style={styles.date}>Ditambahkan: {formatDate(item.created_at)}</Text>
+
+            <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
+              {cuisine.description}
+            </Text>
+
+            <View style={styles.cardFooter}>
+              <View style={styles.priceWrap}>
+                <Text style={[styles.price, { color: colors.primary }]}>
+                  {formatPrice(cuisine.price)}
+                </Text>
+              </View>
+              <View style={styles.regionBadge}>
+                <Ionicons name="location" size={12} color={colors.textSecondary} />
+                <Text style={[styles.regionText, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {cuisine.origin_region}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Memuat favorit...</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Animated.View entering={FadeInUp.springify()}>
+          <FontAwesome name="heart" size={48} color="#EC4899" />
+        </Animated.View>
+        <Animated.Text
+          entering={FadeInUp.delay(200).springify()}
+          style={[styles.loadingText, { color: colors.text }]}
+        >
+          Memuat favorit...
+        </Animated.Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Favorit Saya</Text>
-        <Text style={styles.subtitle}>Kuliner yang kamu sukai</Text>
-      </View>
-
-      <FlatList
-        data={favorites}
-        renderItem={renderFavoriteCard}
-        keyExtractor={(item) => item.id.toString()}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <FontAwesome name="heart-o" size={50} color={Colors[colorScheme ?? 'light'].tabIconDefault} />
-            <Text style={styles.emptyText}>Belum ada favorit</Text>
-            <Text style={styles.emptySubtext}>Mulai tambahkan kuliner favorit kamu</Text>
-          </View>
-        }
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent
       />
+
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        {/* ================= HEADER ================= */}
+        <Animated.View style={[styles.header, headerAnimatedStyle]}>
+          <LinearGradient
+            colors={isDark ? ["#EC4899", "#BE185D"] : ["#EC4899", "#F472B6"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
+          >
+            {/* Decorative Elements */}
+            <Animated.View style={[styles.decorCircle1, decorCircle1Style]} />
+            <Animated.View style={[styles.decorCircle2, decorCircle2Style]} />
+
+            <Animated.View entering={FadeInDown.delay(100).springify()}>
+              <View style={styles.headerTitleWrap}>
+                <FontAwesome name="heart" size={24} color="#FFF" />
+                <Text style={styles.headerTitle}>Favorit Saya</Text>
+              </View>
+              <Text style={styles.headerSubtitle}>
+                {favorites.length} kuliner tersimpan
+              </Text>
+            </Animated.View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* ================= CONTENT ================= */}
+        {favorites.length > 0 && (
+          <Animated.View entering={FadeInUp.delay(200).springify()}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Koleksi Favoritmu
+              </Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                Kuliner yang paling kamu suka ❤️
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+
+        {favorites.map((fav, index) => (
+          <View key={fav.id} style={styles.cardWrapper}>
+            {renderFavoriteCard({ item: fav, index })}
+          </View>
+        ))}
+
+        {favorites.length === 0 && (
+          <Animated.View entering={FadeInUp.springify()} style={styles.emptyState}>
+            <View style={styles.emptyIconWrap}>
+              <FontAwesome name="heart-o" size={64} color={colors.textSecondary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              Belum ada favorit
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              Mulai tambahkan kuliner favoritmu dengan{'\n'}menekan ikon ❤️ pada makanan
+            </Text>
+            <TouchableOpacity 
+              style={[styles.exploreBtn, { backgroundColor: colors.primary }]}
+              onPress={() => router.push('/')}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.exploreBtnText}>Jelajahi Kuliner</Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFF" />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+      </Animated.ScrollView>
     </View>
   );
 }
 
+/* ================= STYLES ================= */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
-  header: {
-    padding: 20,
-    paddingBottom: 10,
+
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  subtitle: {
+
+  loadingText: {
     fontSize: 16,
-    opacity: 0.7,
+    fontWeight: '600',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+
+  scrollContent: {
+    paddingBottom: 100,
   },
-  listContainer: {
-    padding: 15,
+
+  /* Header */
+  header: {
+    marginBottom: 8,
   },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+
+  headerGradient: {
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 20 : 60,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
   },
-  cardContent: {
+
+  decorCircle1: {
+    position: 'absolute',
+    top: -50,
+    right: -30,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+
+  decorCircle2: {
+    position: 'absolute',
+    bottom: -20,
+    left: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+
+  headerTitleWrap: {
     flexDirection: 'row',
-    padding: 15,
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 6,
   },
+
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+  },
+
+  /* Section */
+  sectionHeader: {
+    paddingHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 12,
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+
+  sectionSubtitle: {
+    fontSize: 13,
+  },
+
+  /* Cards */
+  cardWrapper: {
+    paddingHorizontal: 20,
+  },
+
+  card: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    overflow: 'hidden',
+  },
+
+  cardImageWrap: {
+    width: 110,
+    height: 130,
+  },
+
   cuisineImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: '100%',
+    height: '100%',
   },
+
   placeholderImage: {
-    backgroundColor: '#f0f0f0',
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cuisineInfo: {
+
+  cardContent: {
     flex: 1,
-    marginLeft: 15,
+    padding: 14,
+    justifyContent: 'space-between',
   },
-  cuisineHeader: {
+
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 5,
+    alignItems: 'flex-start',
   },
+
+  cardTitleWrap: {
+    flex: 1,
+    marginRight: 8,
+  },
+
   cuisineName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    flex: 1,
+    fontWeight: '700',
+    marginBottom: 4,
   },
+
+  categoryBadge: {
+    backgroundColor: '#FFF5EB',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+
+  categoryText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FF6B00',
+  },
+
   heartButton: {
-    padding: 5,
+    padding: 4,
   },
-  vendorName: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 3,
-  },
-  vendorAddress: {
+
+  description: {
     fontSize: 12,
-    color: '#999',
-    marginBottom: 10,
+    lineHeight: 18,
   },
-  bottomInfo: {
+
+  cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
+  priceWrap: {
+    flex: 1,
+  },
+
   price: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#e74c3c',
+    fontWeight: '800',
   },
-  date: {
-    fontSize: 10,
-    color: '#999',
+
+  regionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    maxWidth: '50%',
   },
-  emptyContainer: {
-    flex: 1,
+
+  regionText: {
+    fontSize: 11,
+  },
+
+  /* Empty State */
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+
+  emptyIconWrap: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 100,
+    marginBottom: 20,
   },
-  emptyText: {
-    marginTop: 15,
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#666',
+
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
   },
-  emptySubtext: {
-    marginTop: 5,
+
+  emptySubtitle: {
     fontSize: 14,
-    color: '#999',
     textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+
+  exploreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+
+  exploreBtnText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
