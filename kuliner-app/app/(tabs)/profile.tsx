@@ -493,7 +493,7 @@ export default function ProfileScreen() {
             Kuliner App v1.0.0
           </Text>
           <Text style={[styles.footerText, { color: theme.textSecondary }]}>
-            Made with ❤️ in Indonesia
+            Made in Indonesia
           </Text>
         </View>
       </Animated.ScrollView>
@@ -595,6 +595,7 @@ function MenuItem({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingBottom: 70,
   },
 
   center: {
