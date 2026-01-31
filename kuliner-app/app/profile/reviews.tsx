@@ -1,20 +1,40 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  FlatList,
+  ScrollView,
   StatusBar,
   ActivityIndicator,
+  Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import Animated, { FadeInUp, FadeInRight } from "react-native-reanimated";
+import Animated, {
+  FadeInUp,
+  FadeInDown,
+  FadeInRight,
+  FadeInLeft,
+  SlideInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withDelay,
+  withSequence,
+  withRepeat,
+  interpolate,
+  useAnimatedScrollHandler,
+  Extrapolation,
+} from "react-native-reanimated";
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const HEADER_HEIGHT = 140;
 
 interface Review {
   id: number;
@@ -58,7 +78,29 @@ const DUMMY_REVIEWS: Review[] = [
     likes: 24,
     isHiddenGem: true,
   },
+  {
+    id: 4,
+    vendorName: "Soto Betawi Bang Mamat",
+    vendorImage: "https://images.unsplash.com/photo-1547928578-bca6e567b8e3?w=200",
+    rating: 5,
+    comment: "Soto betawi terenak! Kuahnya kental, dagingnya empuk. Wajib coba kalau ke daerah sini.",
+    date: "3 minggu lalu",
+    likes: 18,
+    isHiddenGem: true,
+  },
+  {
+    id: 5,
+    vendorName: "Es Cendol Dawet Mbak Sri",
+    vendorImage: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=200",
+    rating: 4,
+    comment: "Cendolnya seger! Gula merahnya original, bukan yang palsu. Cocok buat siang-siang.",
+    date: "1 bulan lalu",
+    likes: 6,
+    isHiddenGem: false,
+  },
 ];
+
+
 
 export default function MyReviewsScreen() {
   const router = useRouter();
@@ -68,6 +110,10 @@ export default function MyReviewsScreen() {
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [likedReviews, setLikedReviews] = useState<number[]>([]);
+
+  const scrollY = useSharedValue(0);
+  const headerScale = useSharedValue(1);
 
   useEffect(() => {
     // Simulate loading
@@ -77,14 +123,99 @@ export default function MyReviewsScreen() {
     }, 800);
   }, []);
 
-  const renderStars = (rating: number) => {
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT],
+      [0, -20],
+      Extrapolation.CLAMP
+    );
+    const opacity = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT / 2],
+      [1, 0.9],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ translateY }],
+      opacity,
+    };
+  });
+
+  const statsAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, 100],
+      [0, -10],
+      Extrapolation.CLAMP
+    );
+    const scale = interpolate(
+      scrollY.value,
+      [0, 100],
+      [1, 0.95],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ translateY }, { scale }],
+    };
+  });
+
+  const handleLike = (reviewId: number) => {
+    if (likedReviews.includes(reviewId)) {
+      setLikedReviews(likedReviews.filter((id) => id !== reviewId));
+      setReviews(reviews.map((r) => 
+        r.id === reviewId ? { ...r, likes: r.likes - 1 } : r
+      ));
+    } else {
+      setLikedReviews([...likedReviews, reviewId]);
+      setReviews(reviews.map((r) => 
+        r.id === reviewId ? { ...r, likes: r.likes + 1 } : r
+      ));
+    }
+  };
+
+  const handleEdit = (review: Review) => {
+    Alert.alert(
+      "Edit Review",
+      `Edit review untuk ${review.vendorName}?`,
+      [
+        { text: "Batal", style: "cancel" },
+        { text: "Edit", onPress: () => Alert.alert("Info", "Fitur edit review akan segera tersedia!") },
+      ]
+    );
+  };
+
+  const handleDelete = (review: Review) => {
+    Alert.alert(
+      "Hapus Review",
+      `Yakin ingin menghapus review untuk ${review.vendorName}?`,
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus",
+          style: "destructive",
+          onPress: () => {
+            setReviews(reviews.filter((r) => r.id !== review.id));
+          },
+        },
+      ]
+    );
+  };
+
+  const renderStars = (rating: number, delay: number = 0) => {
     return (
       <View style={styles.starsRow}>
         {[1, 2, 3, 4, 5].map((star) => (
           <FontAwesome
             key={star}
             name={star <= rating ? "star" : "star-o"}
-            size={14}
+            size={12}
             color="#F59E0B"
           />
         ))}
@@ -92,129 +223,222 @@ export default function MyReviewsScreen() {
     );
   };
 
-  const renderReviewCard = ({ item, index }: { item: Review; index: number }) => (
-    <Animated.View entering={FadeInRight.delay(index * 100).springify()}>
-      <TouchableOpacity
-        style={[styles.reviewCard, { backgroundColor: colors.surface }]}
-        activeOpacity={0.9}
+  const ReviewCard = ({ item, index }: { item: Review; index: number }) => {
+    const isLiked = likedReviews.includes(item.id);
+    const likeScale = useSharedValue(1);
+
+    const handlePressLike = () => {
+      likeScale.value = withSequence(
+        withSpring(1.3, { damping: 5 }),
+        withSpring(1, { damping: 8 })
+      );
+      handleLike(item.id);
+    };
+
+    const likeAnimatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: likeScale.value }],
+    }));
+
+    return (
+      <Animated.View 
+        entering={FadeInUp.delay(index * 80)}
+        style={styles.cardWrapper}
       >
-        <View style={styles.cardHeader}>
-          <Image source={{ uri: item.vendorImage }} style={styles.vendorImage} />
-          <View style={styles.vendorInfo}>
-            <View style={styles.nameRow}>
-              <Text style={[styles.vendorName, { color: colors.text }]} numberOfLines={1}>
-                {item.vendorName}
-              </Text>
-              {item.isHiddenGem && (
-                <MaterialCommunityIcons name="diamond-stone" size={14} color="#FFD700" />
-              )}
+        <TouchableOpacity
+          style={[styles.reviewCard, { backgroundColor: colors.surface }]}
+          activeOpacity={0.95}
+        >
+          <View style={styles.cardHeader}>
+            <Image source={{ uri: item.vendorImage }} style={styles.vendorImage} />
+            <View style={styles.vendorInfo}>
+              <View style={styles.nameRow}>
+                <Text style={[styles.vendorName, { color: colors.text }]} numberOfLines={1}>
+                  {item.vendorName}
+                </Text>
+                {item.isHiddenGem && (
+                  <View style={styles.gemBadge}>
+                    <MaterialCommunityIcons name="diamond-stone" size={12} color="#FFD700" />
+                  </View>
+                )}
+              </View>
+              <View style={styles.metaRow}>
+                {renderStars(item.rating, 0)}
+                <Text style={[styles.dateText, { color: colors.textSecondary }]}>
+                  • {item.date}
+                </Text>
+              </View>
             </View>
-            {renderStars(item.rating)}
           </View>
-          <Text style={[styles.dateText, { color: colors.textSecondary }]}>
-            {item.date}
-          </Text>
-        </View>
 
-        <Text style={[styles.commentText, { color: colors.text }]}>{item.comment}</Text>
+          <Text style={[styles.commentText, { color: colors.text }]}>{item.comment}</Text>
 
-        <View style={styles.cardFooter}>
-          <TouchableOpacity style={styles.likeBtn}>
-            <Ionicons name="heart-outline" size={18} color={colors.textSecondary} />
-            <Text style={[styles.likeCount, { color: colors.textSecondary }]}>
-              {item.likes}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="create-outline" size={18} color={colors.primary} />
-            <Text style={[styles.actionText, { color: colors.primary }]}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="trash-outline" size={18} color="#EF4444" />
-            <Text style={[styles.actionText, { color: "#EF4444" }]}>Hapus</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
+          <View style={[styles.cardFooter, { borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+            <TouchableOpacity style={styles.likeBtn} onPress={handlePressLike} activeOpacity={0.7}>
+              <Animated.View style={likeAnimatedStyle}>
+                <Ionicons 
+                  name={isLiked ? "heart" : "heart-outline"} 
+                  size={20} 
+                  color={isLiked ? "#EF4444" : colors.textSecondary} 
+                />
+              </Animated.View>
+              <Text style={[styles.likeCount, { color: isLiked ? "#EF4444" : colors.textSecondary }]}>
+                {item.likes}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.actionsRight}>
+              <TouchableOpacity 
+                style={[styles.actionBtn, { backgroundColor: `${colors.primary}15` }]}
+                onPress={() => handleEdit(item)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="create-outline" size={16} color={colors.primary} />
+                <Text style={[styles.actionText, { color: colors.primary }]}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.actionBtn, { backgroundColor: "rgba(239,68,68,0.1)" }]}
+                onPress={() => handleDelete(item)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                <Text style={[styles.actionText, { color: "#EF4444" }]}>Hapus</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <LinearGradient
-        colors={isDark ? ["#F59E0B", "#D97706"] : ["#F59E0B", "#FBBF24"]}
-        style={styles.header}
-      >
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Review Saya</Text>
-        <View style={{ width: 40 }} />
-      </LinearGradient>
-
-      {/* Stats */}
-      <Animated.View
-        entering={FadeInUp.delay(100)}
-        style={[styles.statsContainer, { backgroundColor: colors.surface }]}
-      >
-        <View style={styles.statItem}>
-          <Text style={[styles.statNumber, { color: colors.primary }]}>
-            {reviews.length}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-            Total Review
-          </Text>
-        </View>
-        <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-        <View style={styles.statItem}>
-          <Text style={[styles.statNumber, { color: "#F59E0B" }]}>
-            {reviews.reduce((sum, r) => sum + r.likes, 0)}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-            Total Likes
-          </Text>
-        </View>
-        <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-        <View style={styles.statItem}>
-          <Text style={[styles.statNumber, { color: "#10B981" }]}>
-            {reviews.filter((r) => r.isHiddenGem).length}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-            Hidden Gems
-          </Text>
-        </View>
+      {/* Header with Parallax */}
+      <Animated.View style={[styles.headerWrapper, headerAnimatedStyle]}>
+        <LinearGradient
+          colors={isDark ? ["#F59E0B", "#D97706"] : ["#F59E0B", "#FBBF24"]}
+          style={styles.header}
+        >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
+          </TouchableOpacity>
+          <Animated.View entering={FadeInDown.delay(100).springify()}>
+            <Text style={styles.headerTitle}>Review Saya</Text>
+          </Animated.View>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
       </Animated.View>
 
-      {/* Reviews List */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : reviews.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <MaterialCommunityIcons
-            name="comment-text-outline"
-            size={64}
-            color={colors.textSecondary}
-          />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            Belum ada review
+      {/* Scrollable Content */}
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Stats Card */}
+        <Animated.View
+          entering={FadeInUp.delay(200).springify()}
+          style={[statsAnimatedStyle]}
+        >
+          <View style={[styles.statsContainer, { backgroundColor: colors.surface }]}>
+            <Animated.View entering={FadeInUp.delay(300)} style={styles.statItem}>
+              <View style={[styles.statIconWrap, { backgroundColor: `${colors.primary}15` }]}>
+                <Ionicons name="document-text" size={20} color={colors.primary} />
+              </View>
+              <Text style={[styles.statNumber, { color: colors.primary }]}>
+                {reviews.length}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Total Review
+              </Text>
+            </Animated.View>
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <Animated.View entering={FadeInUp.delay(400)} style={styles.statItem}>
+              <View style={[styles.statIconWrap, { backgroundColor: "rgba(245,158,11,0.15)" }]}>
+                <Ionicons name="heart" size={20} color="#F59E0B" />
+              </View>
+              <Text style={[styles.statNumber, { color: "#F59E0B" }]}>
+                {reviews.reduce((sum, r) => sum + r.likes, 0)}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Total Likes
+              </Text>
+            </Animated.View>
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <Animated.View entering={FadeInUp.delay(500)} style={styles.statItem}>
+              <View style={[styles.statIconWrap, { backgroundColor: "rgba(16,185,129,0.15)" }]}>
+                <MaterialCommunityIcons name="diamond-stone" size={20} color="#10B981" />
+              </View>
+              <Text style={[styles.statNumber, { color: "#10B981" }]}>
+                {reviews.filter((r) => r.isHiddenGem).length}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Hidden Gems
+              </Text>
+            </Animated.View>
+          </View>
+        </Animated.View>
+
+        {/* Section Title */}
+        <Animated.View 
+          entering={FadeInLeft.delay(300).springify()} 
+          style={styles.sectionHeader}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Riwayat Review
           </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-            Bagikan pengalamanmu di hidden gems yang kamu kunjungi
+          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+            {reviews.length} review telah kamu tulis
           </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={reviews}
-          renderItem={renderReviewCard}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+        </Animated.View>
+
+        {/* Reviews List */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+              Memuat review...
+            </Text>
+          </View>
+        ) : reviews.length === 0 ? (
+          <Animated.View 
+            entering={FadeInUp.delay(200).springify()}
+            style={styles.emptyContainer}
+          >
+            <View style={[styles.emptyIconWrap, { backgroundColor: `${colors.primary}10` }]}>
+              <MaterialCommunityIcons
+                name="comment-text-outline"
+                size={48}
+                color={colors.primary}
+              />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              Belum ada review
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              Bagikan pengalamanmu di hidden gems yang kamu kunjungi
+            </Text>
+            <TouchableOpacity 
+              style={[styles.emptyButton, { backgroundColor: colors.primary }]}
+              onPress={() => router.push("/(tabs)/vendors")}
+            >
+              <Ionicons name="compass" size={18} color="#FFF" />
+              <Text style={styles.emptyButtonText}>Jelajahi Hidden Gems</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        ) : (
+          <View style={styles.reviewsList}>
+            {reviews.map((item, index) => (
+              <ReviewCard key={item.id} item={item} index={index} />
+            ))}
+          </View>
+        )}
+
+        {/* Bottom Spacing */}
+        <View style={{ height: 40 }} />
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -223,12 +447,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 30,
     paddingHorizontal: 20,
   },
   backButton: {
@@ -240,82 +471,140 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
     color: "#FFF",
+    textAlign: "center",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
+    textAlign: "center",
+    marginTop: 2,
+  },
+  scrollContent: {
+    paddingTop: HEADER_HEIGHT + 10,
+    paddingHorizontal: 20,
   },
   statsContainer: {
     flexDirection: "row",
-    marginHorizontal: 20,
-    marginTop: -20,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 12,
+    elevation: 6,
   },
   statItem: {
     flex: 1,
     alignItems: "center",
   },
+  statIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   statNumber: {
-    fontSize: 24,
-    fontWeight: "700",
+    fontSize: 22,
+    fontWeight: "800",
   },
   statLabel: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: "500",
   },
   statDivider: {
     width: 1,
-    height: "100%",
+    height: "80%",
+    alignSelf: "center",
+  },
+  sectionHeader: {
+    marginTop: 28,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
   },
   loadingContainer: {
-    flex: 1,
+    paddingVertical: 60,
     justifyContent: "center",
     alignItems: "center",
   },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+  },
   emptyContainer: {
-    flex: 1,
+    paddingVertical: 60,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 40,
+    paddingHorizontal: 20,
+  },
+  emptyIconWrap: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: "700",
-    marginTop: 16,
   },
   emptySubtitle: {
     fontSize: 14,
     textAlign: "center",
     marginTop: 8,
+    lineHeight: 20,
   },
-  listContent: {
-    padding: 20,
-    paddingTop: 16,
+  emptyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 25,
+    marginTop: 24,
+    gap: 8,
+  },
+  emptyButtonText: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  reviewsList: {
+    gap: 0,
+  },
+  cardWrapper: {
+    marginBottom: 16,
   },
   reviewCard: {
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   vendorImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 14,
   },
   vendorInfo: {
     flex: 1,
@@ -328,45 +617,66 @@ const styles = StyleSheet.create({
   },
   vendorName: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "700",
     flex: 1,
+  },
+  gemBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(255,215,0,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: 6,
   },
   starsRow: {
     flexDirection: "row",
     gap: 2,
-    marginTop: 4,
   },
   dateText: {
     fontSize: 12,
   },
   commentText: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   cardFooter: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginTop: 16,
-    paddingTop: 12,
+    paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.05)",
-    gap: 16,
   },
   likeBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
   },
   likeCount: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  actionsRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   actionBtn: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     gap: 4,
   },
   actionText: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

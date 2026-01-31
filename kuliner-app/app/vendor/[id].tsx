@@ -79,27 +79,23 @@ export default function VendorDetailScreen() {
   });
 
   const headerAnimatedStyle = useAnimatedStyle(() => {
+    // Keep header image completely static - no movement
+    return {
+      transform: [{ translateY: 0 }],
+      opacity: 1,
+    };
+  });
+
+  const contentAnimatedStyle = useAnimatedStyle(() => {
+    // Only content moves up with parallax
     const translateY = interpolate(
       scrollY.value,
-      [0, HEADER_HEIGHT],
-      [0, -HEADER_HEIGHT],
-      Extrapolation.CLAMP,
-    );
-    const opacity = interpolate(
-      scrollY.value,
       [0, HEADER_HEIGHT / 2],
-      [1, 0],
-      Extrapolation.CLAMP,
-    );
-    const scale = interpolate(
-      scrollY.value,
-      [0, HEADER_HEIGHT],
-      [1, 0.9],
-      Extrapolation.CLAMP,
+      [0, -20],
+      Extrapolation.CLAMP
     );
     return {
-      transform: [{ translateY }, { scale }],
-      opacity,
+      transform: [{ translateY }],
     };
   });
 
@@ -252,14 +248,14 @@ export default function VendorDetailScreen() {
       </Animated.View>
 
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
+        <Ionicons name="arrow-back" size={24} color="#FFF" />
       </TouchableOpacity>
 
       <TouchableOpacity 
         style={styles.shareButton}
         onPress={() => Alert.alert('Share', `Bagikan ${vendor?.name || 'restoran ini'} ke teman!`)}
       >
-        <Ionicons name="share-social-outline" size={22} color="#1A1A1A" />
+        <Ionicons name="share-social-outline" size={22} color="#FFF" />
       </TouchableOpacity>
 
       <Animated.ScrollView
@@ -276,10 +272,11 @@ export default function VendorDetailScreen() {
           />
         }
       >
-        <View
+        <Animated.View
           style={[
             styles.contentContainer,
             { backgroundColor: colors.background },
+            contentAnimatedStyle,
           ]}
         >
           <View style={styles.indicatorPill} />
@@ -618,7 +615,7 @@ export default function VendorDetailScreen() {
           </Animated.View>
 
           <View style={{ height: 120 }} />
-        </View>
+        </Animated.View>
       </Animated.ScrollView>
 
       <Animated.View
@@ -696,16 +693,11 @@ const styles = StyleSheet.create({
     left: 20,
     width: 44,
     height: 44,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    backgroundColor: "rgba(0,0,0,0.2)",
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
   },
   shareButton: {
     position: "absolute",
@@ -713,16 +705,11 @@ const styles = StyleSheet.create({
     right: 20,
     width: 44,
     height: 44,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    backgroundColor: "rgba(0,0,0,0.2)",
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
   },
   scrollContent: { paddingTop: HEADER_HEIGHT - 40, flexGrow: 1 },
   contentContainer: {
