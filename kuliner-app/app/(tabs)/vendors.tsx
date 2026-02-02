@@ -11,7 +11,11 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { FontAwesome, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  FontAwesome,
+  Ionicons,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import Animated, {
@@ -67,19 +71,19 @@ export default function VendorsScreen() {
       scrollY.value,
       [0, HEADER_HEIGHT],
       [0, -HEADER_HEIGHT],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     const opacity = interpolate(
       scrollY.value,
       [0, HEADER_HEIGHT * 0.6],
       [1, 0],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     const scale = interpolate(
       scrollY.value,
       [0, HEADER_HEIGHT],
       [1, 0.9],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     return {
       transform: [{ translateY }, { scale }],
@@ -148,7 +152,13 @@ export default function VendorsScreen() {
   };
 
   /* ================= RENDER ================= */
-  const renderVendorCard = ({ item, index }: { item: Vendor; index: number }) => (
+  const renderVendorCard = ({
+    item,
+    index,
+  }: {
+    item: Vendor;
+    index: number;
+  }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).springify()}>
       <TouchableOpacity
         style={[styles.vendorCard, { backgroundColor: colors.surface }]}
@@ -157,7 +167,10 @@ export default function VendorsScreen() {
       >
         <View style={styles.cardImageWrap}>
           {item.image_url ? (
-            <Image source={{ uri: item.image_url }} style={styles.vendorImage} />
+            <Image
+              source={{ uri: item.image_url }}
+              style={styles.vendorImage}
+            />
           ) : (
             <LinearGradient
               colors={[colors.primary, colors.tint]}
@@ -173,7 +186,11 @@ export default function VendorsScreen() {
           {/* Hidden Gem Badge */}
           {item.is_hidden_gem && (
             <View style={styles.gemBadge}>
-              <MaterialCommunityIcons name="diamond-stone" size={12} color="#FFD700" />
+              <MaterialCommunityIcons
+                name="diamond-stone"
+                size={12}
+                color="#FFD700"
+              />
               <Text style={styles.gemBadgeText}>Gem</Text>
             </View>
           )}
@@ -186,23 +203,43 @@ export default function VendorsScreen() {
         </View>
 
         <View style={styles.cardContent}>
-          <Text style={[styles.vendorName, { color: colors.text }]} numberOfLines={1}>
+          <Text
+            style={[styles.vendorName, { color: colors.text }]}
+            numberOfLines={1}
+          >
             {item.name}
           </Text>
           <View style={styles.locationRow}>
             <Ionicons name="location" size={12} color={colors.textSecondary} />
-            <Text style={[styles.vendorAddress, { color: colors.textSecondary }]} numberOfLines={1}>
+            <Text
+              style={[styles.vendorAddress, { color: colors.textSecondary }]}
+              numberOfLines={1}
+            >
               {item.address}
             </Text>
           </View>
           <View style={styles.cardFooter}>
             <View style={styles.reviewCount}>
-              <Ionicons name="chatbubble-outline" size={12} color={colors.textSecondary} />
-              <Text style={[styles.reviewCountText, { color: colors.textSecondary }]}>
+              <Ionicons
+                name="chatbubble-outline"
+                size={12}
+                color={colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.reviewCountText,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 {item.reviews_count || 0}
               </Text>
             </View>
-            <View style={[styles.priceBadge, { backgroundColor: colors.secondPrimary }]}>
+            <View
+              style={[
+                styles.priceBadge,
+                { backgroundColor: colors.secondPrimary },
+              ]}
+            >
               <Text style={[styles.priceText, { color: colors.primary }]}>
                 {item.price_range}
               </Text>
@@ -253,19 +290,42 @@ export default function VendorsScreen() {
           >
             {/* Decorative Elements - Wrapped to avoid Reanimated transform conflict */}
             <View style={styles.decorCircle1}>
-              <Animated.View style={[StyleSheet.absoluteFill, decorCircle1Style, { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 80 }]} />
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFill,
+                  decorCircle1Style,
+                  {
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    borderRadius: 80,
+                  },
+                ]}
+              />
             </View>
             <View style={styles.decorCircle2}>
-              <Animated.View style={[StyleSheet.absoluteFill, decorCircle2Style, { backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 50 }]} />
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFill,
+                  decorCircle2Style,
+                  {
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    borderRadius: 50,
+                  },
+                ]}
+              />
             </View>
 
             <Animated.View entering={FadeInDown.delay(100).springify()}>
               <View style={styles.headerTitleWrap}>
-                <MaterialCommunityIcons name="map-marker-radius" size={28} color="#FFF" />
+                <MaterialCommunityIcons
+                  name="map-marker-radius"
+                  size={28}
+                  color="#FFF"
+                />
                 <Text style={styles.headerTitle}>Jelajahi Tempat</Text>
               </View>
               <Text style={styles.headerSubtitle}>
-                {vendors.filter(v => v.is_hidden_gem).length} Hidden Gems dari {vendors.length} tempat
+                {vendors.filter((v) => v.is_hidden_gem).length} Hidden Gems dari{" "}
+                {vendors.length} tempat
               </Text>
             </Animated.View>
 
@@ -300,7 +360,11 @@ export default function VendorsScreen() {
                 />
                 {search.length > 0 && (
                   <TouchableOpacity onPress={() => setSearch("")}>
-                    <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                    <Ionicons
+                      name="close-circle"
+                      size={20}
+                      color={colors.textSecondary}
+                    />
                   </TouchableOpacity>
                 )}
               </View>
@@ -317,7 +381,10 @@ export default function VendorsScreen() {
             <TouchableOpacity
               style={[
                 styles.gemFilterBtn,
-                showOnlyGems && { backgroundColor: "#FFD70020", borderColor: "#FFD700" },
+                showOnlyGems && {
+                  backgroundColor: "#FFD70020",
+                  borderColor: "#FFD700",
+                },
                 !showOnlyGems && { borderColor: colors.border },
               ]}
               onPress={() => setShowOnlyGems(!showOnlyGems)}
@@ -342,18 +409,33 @@ export default function VendorsScreen() {
 
         <View style={styles.gridContainer}>
           {filteredVendors.map((vendor, index) => (
-            <View key={vendor.id}>{renderVendorCard({ item: vendor, index })}</View>
+            <View key={vendor.id}>
+              {renderVendorCard({ item: vendor, index })}
+            </View>
           ))}
         </View>
 
         {filteredVendors.length === 0 && (
-          <Animated.View entering={FadeInUp.springify()} style={styles.emptyState}>
-            <MaterialCommunityIcons name="diamond-outline" size={64} color={colors.textSecondary} />
+          <Animated.View
+            entering={FadeInUp.springify()}
+            style={styles.emptyState}
+          >
+            <MaterialCommunityIcons
+              name="diamond-outline"
+              size={64}
+              color={colors.textSecondary}
+            />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              {showOnlyGems ? "Belum ada Hidden Gems" : "Tidak ada tempat ditemukan"}
+              {showOnlyGems
+                ? "Belum ada Hidden Gems"
+                : "Tidak ada tempat ditemukan"}
             </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              {showOnlyGems ? "Coba nonaktifkan filter Hidden Gems" : "Coba kata kunci lain"}
+            <Text
+              style={[styles.emptySubtitle, { color: colors.textSecondary }]}
+            >
+              {showOnlyGems
+                ? "Coba nonaktifkan filter Hidden Gems"
+                : "Coba kata kunci lain"}
             </Text>
           </Animated.View>
         )}
@@ -390,7 +472,8 @@ const styles = StyleSheet.create({
   },
 
   headerGradient: {
-    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 20 : 60,
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 20 : 60,
     paddingBottom: 24,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 32,

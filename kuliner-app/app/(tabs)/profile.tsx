@@ -319,9 +319,8 @@ export default function ProfileScreen() {
       {/* ================= ANIMATED HEADER ================= */}
       <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
         <LinearGradient
-          colors={
-            isDark ? [theme.primary, "#CC5500"] : [theme.primary, "#FF8533"]
-          }
+         colors={isDark ? ["#1E40AF", "#1E3A8A"] : ["#2563EB", "#1D4ED8"]}
+
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
