@@ -632,7 +632,7 @@ export default function HomeScreen() {
         <Animated.View entering={FadeInUp.delay(400).springify()}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleWrap}>
-              <Ionicons name="flame" size={24} color={colors.primary} />
+              <Ionicons name="flame" size={24} color="#F97316" />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Restoran Populer
               </Text>
