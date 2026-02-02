@@ -176,8 +176,8 @@ export default function ProfileScreen() {
   useEffect(() => {
     fetchProfile();
     // Start entrance animations
-    avatarScale.value = withDelay(300, withSpring(1, { damping: 12 }));
-    statsAnim.value = withDelay(500, withSpring(1, { damping: 15 }));
+    avatarScale.value = withDelay(300, withTiming(1, { duration: 600 }));
+    statsAnim.value = withDelay(500, withTiming(1, { duration: 600 }));
   }, []);
 
   /* ================= FUNCTIONS ================= */
@@ -231,21 +231,17 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Apakah Anda yakin ingin keluar?",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Keluar",
-          style: "destructive",
-          onPress: async () => {
-            await logout();
-            router.replace("/auth/login");
-          },
+    Alert.alert("Logout", "Apakah Anda yakin ingin keluar?", [
+      { text: "Batal", style: "cancel" },
+      {
+        text: "Keluar",
+        style: "destructive",
+        onPress: async () => {
+          await logout();
+          router.replace("/auth/login");
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const formatDate = (date: string) =>
@@ -268,42 +264,46 @@ export default function ProfileScreen() {
       icon: "edit",
       title: "Edit Profil",
       subtitle: "Ubah informasi profil Anda",
-      onPress: () => router.push('/profile/edit' as any),
+      onPress: () => router.push("/profile/edit" as any),
       iconBgColor: "#4F46E5",
     },
     {
       icon: "diamond" as any,
       title: "Hidden Gems Tersimpan",
       subtitle: `${stats.totalFavorites} gems tersimpan`,
-      onPress: () => router.push('/(tabs)/favorites'),
+      onPress: () => router.push("/(tabs)/favorites"),
       iconBgColor: "#D97706",
     },
     {
       icon: "star",
       title: "Review Saya",
       subtitle: `${stats.totalReviews} ulasan ditulis`,
-      onPress: () => router.push('/profile/reviews' as any),
+      onPress: () => router.push("/profile/reviews" as any),
       iconBgColor: "#F59E0B",
     },
     {
       icon: "cog",
       title: "Pengaturan",
       subtitle: "Kelola preferensi aplikasi",
-      onPress: () => router.push('/profile/settings' as any),
+      onPress: () => router.push("/profile/settings" as any),
       iconBgColor: "#6B7280",
     },
     {
       icon: "question-circle",
       title: "Bantuan",
       subtitle: "FAQ dan dukungan",
-      onPress: () => router.push('/profile/help' as any),
+      onPress: () => router.push("/profile/help" as any),
       iconBgColor: "#10B981",
     },
     {
       icon: "info-circle",
       title: "Tentang Aplikasi",
       subtitle: "Versi 1.0.0",
-      onPress: () => Alert.alert("Hidden Gems Finder", "Versi 1.0.0\n\nTemukan kuliner tersembunyi berkualitas tinggi di sekitarmu!\n\n© 2026 Hidden Gems Finder"),
+      onPress: () =>
+        Alert.alert(
+          "Hidden Gems Finder",
+          "Versi 1.0.0\n\nTemukan kuliner tersembunyi berkualitas tinggi di sekitarmu!\n\n© 2026 Hidden Gems Finder",
+        ),
       iconBgColor: "#3B82F6",
     },
   ];
@@ -328,10 +328,22 @@ export default function ProfileScreen() {
         >
           {/* Decorative Elements - Wrapped in View to avoid Reanimated transform conflict */}
           <View style={styles.decorCircle1}>
-            <Animated.View style={[StyleSheet.absoluteFill, decorCircle1Style, { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 70 }]} />
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                decorCircle1Style,
+                { backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 70 },
+              ]}
+            />
           </View>
           <View style={styles.decorCircle2}>
-            <Animated.View style={[StyleSheet.absoluteFill, decorCircle2Style, { backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 50 }]} />
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                decorCircle2Style,
+                { backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 50 },
+              ]}
+            />
           </View>
           <View style={styles.decorCircle3} />
 
@@ -355,19 +367,19 @@ export default function ProfileScreen() {
           {/* User Info */}
           <Animated.View style={[styles.userInfo, nameAnimatedStyle]}>
             <Animated.Text
-              entering={FadeInUp.delay(400).springify()}
+              entering={FadeInUp.delay(400)}
               style={styles.userName}
             >
               {user?.name}
             </Animated.Text>
             <Animated.Text
-              entering={FadeInUp.delay(500).springify()}
+              entering={FadeInUp.delay(500)}
               style={styles.userEmail}
             >
               {user?.email}
             </Animated.Text>
             <Animated.View
-              entering={FadeInUp.delay(600).springify()}
+              entering={FadeInUp.delay(600)}
               style={styles.joinedBadge}
             >
               <Ionicons
@@ -392,7 +404,7 @@ export default function ProfileScreen() {
       >
         {/* Stats Cards */}
         <Animated.View
-          entering={FadeInUp.delay(300).springify()}
+          entering={FadeInUp.delay(300)}
           style={styles.statsContainer}
         >
           <View style={[styles.statsCard, { backgroundColor: theme.surface }]}>
@@ -430,7 +442,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* Achievement Badge */}
-        <Animated.View entering={FadeInUp.delay(500).springify()}>
+        <Animated.View entering={FadeInUp.delay(500)}>
           <TouchableOpacity
             style={[styles.achievementCard, { backgroundColor: theme.surface }]}
             activeOpacity={0.9}
@@ -467,7 +479,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* Menu Section */}
-        <Animated.View entering={FadeInUp.delay(600).springify()}>
+        <Animated.View entering={FadeInUp.delay(600)}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             Pengaturan
           </Text>
@@ -478,7 +490,7 @@ export default function ProfileScreen() {
         ))}
 
         {/* Logout Button */}
-        <Animated.View entering={FadeInUp.delay(900).springify()}>
+        <Animated.View entering={FadeInUp.delay(900)}>
           <TouchableOpacity
             style={[styles.logoutBtn, { borderColor: theme.error }]}
             onPress={handleLogout}
@@ -490,16 +502,6 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
         </Animated.View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
-            Kuliner App v1.0.0
-          </Text>
-          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
-            Made in Indonesia
-          </Text>
-        </View>
       </Animated.ScrollView>
     </View>
   );
@@ -523,10 +525,7 @@ function StatItem({
   delay: number;
 }) {
   return (
-    <Animated.View
-      entering={FadeInUp.delay(delay).springify()}
-      style={styles.statItem}
-    >
+    <Animated.View entering={FadeInUp.delay(delay)} style={styles.statItem}>
       <View
         style={[styles.statIconWrap, { backgroundColor: `${iconColor}15` }]}
       >
@@ -551,7 +550,7 @@ function MenuItem({
   index = 0,
 }: MenuItemProps & { theme: any }) {
   return (
-    <Animated.View entering={FadeInRight.delay(700 + index * 80).springify()}>
+    <Animated.View entering={FadeInRight.delay(700 + index * 80)}>
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.85}
@@ -599,7 +598,7 @@ function MenuItem({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingBottom: 70,
+    paddingBottom: 40,
   },
 
   center: {
