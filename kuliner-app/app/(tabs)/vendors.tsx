@@ -283,7 +283,9 @@ export default function VendorsScreen() {
         {/* ================= HEADER ================= */}
         <Animated.View style={[styles.header, headerAnimatedStyle]}>
           <LinearGradient
-            colors={isDark ? ["#10B981", "#059669"] : ["#10B981", "#34D399"]}
+            colors={
+              isDark ? [colors.primary, "#0D9488"] : [colors.primary, "#14B8A6"]
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.headerGradient}

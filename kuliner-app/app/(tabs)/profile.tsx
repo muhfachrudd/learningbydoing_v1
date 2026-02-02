@@ -63,9 +63,9 @@ const AVATAR_SIZE = 100;
 
 /* ================= COMPONENT ================= */
 export default function ProfileScreen() {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? "light"];
-  const isDark = colorScheme === "dark";
+  const scheme = useColorScheme();
+  const colors = Colors[scheme ?? "light"];
+  const isDark = scheme === "dark";
   const router = useRouter();
   const { user: authUser, logout, isLoggedIn } = useAuth();
 
@@ -253,8 +253,8 @@ export default function ProfileScreen() {
   /* ================= RENDER ================= */
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -309,7 +309,7 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar
         barStyle="light-content"
         backgroundColor="transparent"
@@ -319,8 +319,9 @@ export default function ProfileScreen() {
       {/* ================= ANIMATED HEADER ================= */}
       <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
         <LinearGradient
-         colors={isDark ? ["#1E40AF", "#1E3A8A"] : ["#2563EB", "#1D4ED8"]}
-
+          colors={
+            isDark ? [colors.primary, "#0D9488"] : [colors.primary, "#14B8A6"]
+          }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
@@ -355,7 +356,7 @@ export default function ProfileScreen() {
                 colors={["#FFF", "#F0F0F0"]}
                 style={styles.avatarPlaceholder}
               >
-                <FontAwesome name="user" size={40} color={theme.primary} />
+                <FontAwesome name="user" size={40} color={colors.primary} />
               </LinearGradient>
             )}
             <View style={styles.onlineBadge}>
@@ -406,35 +407,35 @@ export default function ProfileScreen() {
           entering={FadeInUp.delay(300)}
           style={styles.statsContainer}
         >
-          <View style={[styles.statsCard, { backgroundColor: theme.surface }]}>
+          <View style={[styles.statsCard, { backgroundColor: colors.surface }]}>
             <StatItem
               icon="heart"
-              iconColor="#EC4899"
+              iconColor="#B91C1C"
               value={stats.totalFavorites}
               label="Favorit"
-              theme={theme}
+              colors={colors}
               delay={400}
             />
             <View
-              style={[styles.statsDivider, { backgroundColor: theme.border }]}
+              style={[styles.statsDivider, { backgroundColor: colors.border }]}
             />
             <StatItem
               icon="star"
               iconColor="#F59E0B"
               value={stats.totalReviews}
               label="Review"
-              theme={theme}
+              colors={colors}
               delay={500}
             />
             <View
-              style={[styles.statsDivider, { backgroundColor: theme.border }]}
+              style={[styles.statsDivider, { backgroundColor: colors.border }]}
             />
             <StatItem
               icon="thumbs-up"
               iconColor="#10B981"
               value={stats.totalReviewLikes}
               label="Like"
-              theme={theme}
+              colors={colors}
               delay={600}
             />
           </View>
@@ -443,7 +444,10 @@ export default function ProfileScreen() {
         {/* Achievement Badge */}
         <Animated.View entering={FadeInUp.delay(500)}>
           <TouchableOpacity
-            style={[styles.achievementCard, { backgroundColor: theme.surface }]}
+            style={[
+              styles.achievementCard,
+              { backgroundColor: colors.surface },
+            ]}
             activeOpacity={0.9}
           >
             <LinearGradient
@@ -457,20 +461,22 @@ export default function ProfileScreen() {
               />
             </LinearGradient>
             <View style={styles.achievementInfo}>
-              <Text style={[styles.achievementTitle, { color: theme.text }]}>
+              <Text style={[styles.achievementTitle, { color: colors.text }]}>
                 Gem Hunter
               </Text>
               <Text
                 style={[
                   styles.achievementSubtitle,
-                  { color: theme.textSecondary },
+                  { color: colors.textSecondary },
                 ]}
               >
                 Temukan 5 hidden gems untuk unlock badge ini!
               </Text>
             </View>
             <View style={styles.achievementProgress}>
-              <Text style={[styles.achievementCount, { color: theme.primary }]}>
+              <Text
+                style={[styles.achievementCount, { color: colors.primary }]}
+              >
                 2/5
               </Text>
             </View>
@@ -479,24 +485,24 @@ export default function ProfileScreen() {
 
         {/* Menu Section */}
         <Animated.View entering={FadeInUp.delay(600)}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Pengaturan
           </Text>
         </Animated.View>
 
         {menuItems.map((item, index) => (
-          <MenuItem key={item.title} {...item} theme={theme} index={index} />
+          <MenuItem key={item.title} {...item} colors={colors} index={index} />
         ))}
 
         {/* Logout Button */}
         <Animated.View entering={FadeInUp.delay(900)}>
           <TouchableOpacity
-            style={[styles.logoutBtn, { borderColor: theme.error }]}
+            style={[styles.logoutBtn, { borderColor: colors.error }]}
             onPress={handleLogout}
             activeOpacity={0.8}
           >
-            <FontAwesome name="sign-out" size={20} color={theme.error} />
-            <Text style={[styles.logoutText, { color: theme.error }]}>
+            <FontAwesome name="sign-out" size={20} color={colors.error} />
+            <Text style={[styles.logoutText, { color: colors.error }]}>
               Keluar dari Akun
             </Text>
           </TouchableOpacity>
@@ -513,14 +519,14 @@ function StatItem({
   iconColor,
   value,
   label,
-  theme,
+  colors,
   delay,
 }: {
   icon: IconName;
   iconColor: string;
   value: number;
   label: string;
-  theme: any;
+  colors: any;
   delay: number;
 }) {
   return (
@@ -530,8 +536,8 @@ function StatItem({
       >
         <FontAwesome name={icon} size={16} color={iconColor} />
       </View>
-      <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
         {label}
       </Text>
     </Animated.View>
@@ -545,15 +551,15 @@ function MenuItem({
   onPress,
   showArrow = true,
   iconBgColor = "#6B7280",
-  theme,
+  colors,
   index = 0,
-}: MenuItemProps & { theme: any }) {
+}: MenuItemProps & { colors: any }) {
   return (
     <Animated.View entering={FadeInRight.delay(700 + index * 80)}>
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.85}
-        style={[styles.menuItem, { backgroundColor: theme.surface }]}
+        style={[styles.menuItem, { backgroundColor: colors.surface }]}
       >
         <View style={styles.menuLeft}>
           <LinearGradient
@@ -564,12 +570,12 @@ function MenuItem({
           </LinearGradient>
 
           <View style={styles.menuTextWrap}>
-            <Text style={[styles.menuTitle, { color: theme.text }]}>
+            <Text style={[styles.menuTitle, { color: colors.text }]}>
               {title}
             </Text>
             {subtitle && (
               <Text
-                style={[styles.menuSubtitle, { color: theme.textSecondary }]}
+                style={[styles.menuSubtitle, { color: colors.textSecondary }]}
               >
                 {subtitle}
               </Text>
@@ -579,12 +585,12 @@ function MenuItem({
 
         {showArrow && (
           <View
-            style={[styles.menuArrow, { backgroundColor: theme.background }]}
+            style={[styles.menuArrow, { backgroundColor: colors.background }]}
           >
             <Ionicons
               name="chevron-forward"
               size={16}
-              color={theme.textSecondary}
+              color={colors.textSecondary}
             />
           </View>
         )}

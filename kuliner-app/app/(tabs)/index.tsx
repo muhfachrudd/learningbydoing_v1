@@ -32,6 +32,7 @@ import Animated, {
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
+import { useAuth } from "@/utils/AuthContext";
 
 import {
   vendorService,
@@ -52,6 +53,7 @@ const HEADER_HEIGHT = 280;
 export default function HomeScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
+  const { user } = useAuth();
   const colors = Colors[scheme ?? "light"];
   const isDark = scheme === "dark";
 
@@ -192,9 +194,10 @@ export default function HomeScreen() {
   // Kriteria: Rating >= 4.5, Review < 100, atau di-flag sebagai hidden_gem
   const hiddenGems = useMemo(() => {
     return vendors
-      .filter((v) => 
-        v.is_hidden_gem || 
-        ((v.rating || 0) >= 4.5 && (v.reviews_count || 0) < 100)
+      .filter(
+        (v) =>
+          v.is_hidden_gem ||
+          ((v.rating || 0) >= 4.5 && (v.reviews_count || 0) < 100),
       )
       .sort((a, b) => (b.rating || 0) - (a.rating || 0))
       .slice(0, 6);
@@ -410,7 +413,7 @@ export default function HomeScreen() {
                   {item.reviews_count || 0} reviews
                 </Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.viewBtn}
                 onPress={() => router.push(`/vendor/${item.id}` as any)}
               >
@@ -464,7 +467,7 @@ export default function HomeScreen() {
         <Animated.View style={[styles.header, headerAnimatedStyle]}>
           <LinearGradient
             colors={
-              isDark ? [colors.primary, "#CC5500"] : [colors.primary, "#FF8533"]
+              isDark ? [colors.primary, "#0D9488"] : [colors.primary, "#14B8A6"]
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -472,10 +475,28 @@ export default function HomeScreen() {
           >
             {/* Decorative Elements - Wrapped to avoid Reanimated transform conflict */}
             <View style={styles.decorCircle1}>
-              <Animated.View style={[StyleSheet.absoluteFill, decorCircle1Style, { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 100 }]} />
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFill,
+                  decorCircle1Style,
+                  {
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    borderRadius: 100,
+                  },
+                ]}
+              />
             </View>
             <View style={styles.decorCircle2}>
-              <Animated.View style={[StyleSheet.absoluteFill, decorCircle2Style, { backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 60 }]} />
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFill,
+                  decorCircle2Style,
+                  {
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    borderRadius: 60,
+                  },
+                ]}
+              />
             </View>
             <View style={styles.decorCircle3} />
 
@@ -497,7 +518,14 @@ export default function HomeScreen() {
                   colors={["#FFF", "#F5F5F5"]}
                   style={styles.profileBtnInner}
                 >
-                  <FontAwesome name="user" size={18} color={colors.primary} />
+                  {user?.avatar ? (
+                    <Image
+                      source={{ uri: user.avatar }}
+                      style={styles.profileAvatar}
+                    />
+                  ) : (
+                    <FontAwesome name="user" size={18} color={colors.primary} />
+                  )}
                 </LinearGradient>
               </TouchableOpacity>
             </Animated.View>
@@ -569,9 +597,9 @@ export default function HomeScreen() {
                   Hidden Gems
                 </Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.seeAllBtn}
-                onPress={() => router.push('/(tabs)/vendors')}
+                onPress={() => router.push("/(tabs)/vendors")}
               >
                 <Text style={[styles.seeAllText, { color: colors.primary }]}>
                   Lihat Semua
@@ -609,9 +637,9 @@ export default function HomeScreen() {
                 Restoran Populer
               </Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.seeAllBtn}
-              onPress={() => router.push('/(tabs)/vendors')}
+              onPress={() => router.push("/(tabs)/vendors")}
             >
               <Text style={[styles.seeAllText, { color: colors.primary }]}>
                 Lihat Semua
@@ -762,6 +790,12 @@ const styles = StyleSheet.create({
     height: 48,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 16,
+  },
+
+  profileAvatar: {
+    width: "100%",
+    height: "100%",
     borderRadius: 16,
   },
 
