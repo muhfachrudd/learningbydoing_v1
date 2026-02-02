@@ -14,7 +14,15 @@ import {
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import Animated, { FadeInUp, FadeInDown } from "react-native-reanimated";
+import Animated, {
+  FadeInUp,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  useAnimatedScrollHandler,
+  interpolate,
+  Extrapolation,
+} from "react-native-reanimated";
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
@@ -27,6 +35,34 @@ export default function EditProfileScreen() {
   const colors = Colors[scheme ?? "light"];
   const isDark = scheme === "dark";
   const { user } = useAuth();
+  const HEADER_HEIGHT = 140;
+
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT],
+      [0, -20],
+      Extrapolation.CLAMP,
+    );
+    const opacity = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT / 2],
+      [1, 0.9],
+      Extrapolation.CLAMP,
+    );
+    return {
+      transform: [{ translateY }],
+      opacity,
+    };
+  });
 
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
@@ -44,14 +80,14 @@ export default function EditProfileScreen() {
     }
 
     setSaving(true);
-    
+
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    
+
     Alert.alert("Berhasil", "Profil berhasil diperbarui", [
       { text: "OK", onPress: () => router.back() },
     ]);
-    
+
     setSaving(false);
   };
 
@@ -60,27 +96,37 @@ export default function EditProfileScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <LinearGradient
-        colors={isDark ? [colors.primary, "#CC5500"] : [colors.primary, "#FF8533"]}
-        style={styles.header}
-      >
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profil</Text>
-        <View style={{ width: 40 }} />
-      </LinearGradient>
+      <Animated.View style={[styles.headerWrapper, headerAnimatedStyle]}>
+        <LinearGradient
+          colors={[colors.primary, colors.primary]}
+          style={styles.header}
+        >
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Profil</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+      </Animated.View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView
+        <Animated.ScrollView
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* Avatar Section */}
-          <Animated.View entering={FadeInDown.delay(100)} style={styles.avatarSection}>
+          <Animated.View
+            entering={FadeInDown.delay(100)}
+            style={styles.avatarSection}
+          >
             <View style={styles.avatarContainer}>
               {user?.avatar ? (
                 <Image source={{ uri: user.avatar }} style={styles.avatar} />
@@ -93,8 +139,13 @@ export default function EditProfileScreen() {
                 </LinearGradient>
               )}
               <TouchableOpacity
-                style={[styles.editAvatarBtn, { backgroundColor: colors.primary }]}
-                onPress={() => Alert.alert("Info", "Fitur upload foto segera hadir!")}
+                style={[
+                  styles.editAvatarBtn,
+                  { backgroundColor: colors.primary },
+                ]}
+                onPress={() =>
+                  Alert.alert("Info", "Fitur upload foto segera hadir!")
+                }
               >
                 <Ionicons name="camera" size={18} color="#FFF" />
               </TouchableOpacity>
@@ -105,7 +156,10 @@ export default function EditProfileScreen() {
           </Animated.View>
 
           {/* Form */}
-          <Animated.View entering={FadeInUp.delay(200)} style={styles.formSection}>
+          <Animated.View
+            entering={FadeInUp.delay(200)}
+            style={styles.formSection}
+          >
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textSecondary }]}>
                 Nama Lengkap
@@ -113,10 +167,17 @@ export default function EditProfileScreen() {
               <View
                 style={[
                   styles.inputContainer,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
-                <Ionicons name="person-outline" size={20} color={colors.textSecondary} />
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
                   value={name}
@@ -128,14 +189,23 @@ export default function EditProfileScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Email</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>
+                Email
+              </Text>
               <View
                 style={[
                   styles.inputContainer,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
-                <Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
+                <Ionicons
+                  name="mail-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
                   value={email}
@@ -155,10 +225,17 @@ export default function EditProfileScreen() {
               <View
                 style={[
                   styles.inputContainer,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
-                <Ionicons name="call-outline" size={20} color={colors.textSecondary} />
+                <Ionicons
+                  name="call-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
                   value={phone}
@@ -172,7 +249,10 @@ export default function EditProfileScreen() {
           </Animated.View>
 
           {/* Save Button */}
-          <Animated.View entering={FadeInUp.delay(300)} style={styles.buttonSection}>
+          <Animated.View
+            entering={FadeInUp.delay(300)}
+            style={styles.buttonSection}
+          >
             <TouchableOpacity
               style={[styles.saveButton, { backgroundColor: colors.primary }]}
               onPress={handleSave}
@@ -188,7 +268,7 @@ export default function EditProfileScreen() {
               )}
             </TouchableOpacity>
           </Animated.View>
-        </ScrollView>
+        </Animated.ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -198,12 +278,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 30,
     paddingHorizontal: 20,
   },
   backButton: {
@@ -215,12 +302,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
     color: "#FFF",
+    textAlign: "center",
   },
   scrollContent: {
-    padding: 20,
+    paddingTop: 150,
+    paddingHorizontal: 20,
     paddingBottom: 40,
   },
   avatarSection: {

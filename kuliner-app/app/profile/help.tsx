@@ -9,7 +9,15 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import Animated, { FadeInUp, FadeInDown } from "react-native-reanimated";
+import Animated, {
+  FadeInUp,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  useAnimatedScrollHandler,
+  interpolate,
+  Extrapolation,
+} from "react-native-reanimated";
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
@@ -65,6 +73,34 @@ export default function HelpScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme ?? "light"];
   const isDark = scheme === "dark";
+  const HEADER_HEIGHT = 140;
+
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT],
+      [0, -20],
+      Extrapolation.CLAMP,
+    );
+    const opacity = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT / 2],
+      [1, 0.9],
+      Extrapolation.CLAMP,
+    );
+    return {
+      transform: [{ translateY }],
+      opacity,
+    };
+  });
 
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -73,11 +109,15 @@ export default function HelpScreen() {
   };
 
   const handleContactEmail = () => {
-    Linking.openURL("mailto:support@hiddengemsfinder.com?subject=Bantuan%20Aplikasi");
+    Linking.openURL(
+      "mailto:support@hiddengemsfinder.com?subject=Bantuan%20Aplikasi",
+    );
   };
 
   const handleContactWhatsApp = () => {
-    Linking.openURL("https://wa.me/6281234567890?text=Halo,%20saya%20butuh%20bantuan%20dengan%20aplikasi%20Hidden%20Gems%20Finder");
+    Linking.openURL(
+      "https://wa.me/6281234567890?text=Halo,%20saya%20butuh%20bantuan%20dengan%20aplikasi%20Hidden%20Gems%20Finder",
+    );
   };
 
   return (
@@ -85,18 +125,25 @@ export default function HelpScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <LinearGradient
-        colors={isDark ? ["#10B981", "#059669"] : ["#10B981", "#34D399"]}
-        style={styles.header}
-      >
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bantuan</Text>
-        <View style={{ width: 40 }} />
-      </LinearGradient>
+      <Animated.View style={[styles.headerWrapper, headerAnimatedStyle]}>
+        <LinearGradient
+          colors={[colors.primary, colors.primary]}
+          style={styles.header}
+        >
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Bantuan</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+      </Animated.View>
 
-      <ScrollView
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -110,11 +157,20 @@ export default function HelpScreen() {
               style={[styles.contactCard, { backgroundColor: colors.surface }]}
               onPress={handleContactEmail}
             >
-              <View style={[styles.contactIcon, { backgroundColor: "#3B82F620" }]}>
+              <View
+                style={[styles.contactIcon, { backgroundColor: "#3B82F620" }]}
+              >
                 <Ionicons name="mail" size={24} color="#3B82F6" />
               </View>
-              <Text style={[styles.contactTitle, { color: colors.text }]}>Email</Text>
-              <Text style={[styles.contactSubtitle, { color: colors.textSecondary }]}>
+              <Text style={[styles.contactTitle, { color: colors.text }]}>
+                Email
+              </Text>
+              <Text
+                style={[
+                  styles.contactSubtitle,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 support@app.com
               </Text>
             </TouchableOpacity>
@@ -123,11 +179,20 @@ export default function HelpScreen() {
               style={[styles.contactCard, { backgroundColor: colors.surface }]}
               onPress={handleContactWhatsApp}
             >
-              <View style={[styles.contactIcon, { backgroundColor: "#22C55E20" }]}>
+              <View
+                style={[styles.contactIcon, { backgroundColor: "#22C55E20" }]}
+              >
                 <Ionicons name="logo-whatsapp" size={24} color="#22C55E" />
               </View>
-              <Text style={[styles.contactTitle, { color: colors.text }]}>WhatsApp</Text>
-              <Text style={[styles.contactSubtitle, { color: colors.textSecondary }]}>
+              <Text style={[styles.contactTitle, { color: colors.text }]}>
+                WhatsApp
+              </Text>
+              <Text
+                style={[
+                  styles.contactSubtitle,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 Chat langsung
               </Text>
             </TouchableOpacity>
@@ -159,13 +224,17 @@ export default function HelpScreen() {
                     {item.question}
                   </Text>
                   <Ionicons
-                    name={expandedId === item.id ? "chevron-up" : "chevron-down"}
+                    name={
+                      expandedId === item.id ? "chevron-up" : "chevron-down"
+                    }
                     size={20}
                     color={colors.textSecondary}
                   />
                 </View>
                 {expandedId === item.id && (
-                  <Text style={[styles.faqAnswer, { color: colors.textSecondary }]}>
+                  <Text
+                    style={[styles.faqAnswer, { color: colors.textSecondary }]}
+                  >
                     {item.answer}
                   </Text>
                 )}
@@ -181,7 +250,9 @@ export default function HelpScreen() {
           </Text>
           <View style={[styles.tipsCard, { backgroundColor: colors.surface }]}>
             <View style={styles.tipItem}>
-              <View style={[styles.tipBullet, { backgroundColor: colors.primary }]}>
+              <View
+                style={[styles.tipBullet, { backgroundColor: colors.primary }]}
+              >
                 <Text style={styles.tipNumber}>1</Text>
               </View>
               <Text style={[styles.tipText, { color: colors.text }]}>
@@ -189,7 +260,9 @@ export default function HelpScreen() {
               </Text>
             </View>
             <View style={styles.tipItem}>
-              <View style={[styles.tipBullet, { backgroundColor: colors.primary }]}>
+              <View
+                style={[styles.tipBullet, { backgroundColor: colors.primary }]}
+              >
                 <Text style={styles.tipNumber}>2</Text>
               </View>
               <Text style={[styles.tipText, { color: colors.text }]}>
@@ -197,7 +270,9 @@ export default function HelpScreen() {
               </Text>
             </View>
             <View style={styles.tipItem}>
-              <View style={[styles.tipBullet, { backgroundColor: colors.primary }]}>
+              <View
+                style={[styles.tipBullet, { backgroundColor: colors.primary }]}
+              >
                 <Text style={styles.tipNumber}>3</Text>
               </View>
               <Text style={[styles.tipText, { color: colors.text }]}>
@@ -205,7 +280,9 @@ export default function HelpScreen() {
               </Text>
             </View>
             <View style={styles.tipItem}>
-              <View style={[styles.tipBullet, { backgroundColor: colors.primary }]}>
+              <View
+                style={[styles.tipBullet, { backgroundColor: colors.primary }]}
+              >
                 <Text style={styles.tipNumber}>4</Text>
               </View>
               <Text style={[styles.tipText, { color: colors.text }]}>
@@ -214,7 +291,7 @@ export default function HelpScreen() {
             </View>
           </View>
         </Animated.View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -223,12 +300,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 30,
     paddingHorizontal: 20,
   },
   backButton: {
@@ -240,12 +324,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
     color: "#FFF",
+    textAlign: "center",
   },
   scrollContent: {
-    padding: 20,
+    paddingTop: 150,
+    paddingHorizontal: 20,
     paddingBottom: 40,
   },
   sectionTitle: {

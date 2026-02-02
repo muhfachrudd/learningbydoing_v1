@@ -311,9 +311,7 @@ export default function FavoritesScreen() {
         {/* ================= HEADER ================= */}
         <Animated.View style={[styles.header, headerAnimatedStyle]}>
           <LinearGradient
-            colors={
-              isDark ? [colors.primary, "#0D9488"] : [colors.primary, "#14B8A6"]
-            }
+            colors={[colors.primary, colors.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.headerGradient}
@@ -399,7 +397,7 @@ export default function FavoritesScreen() {
             <Text
               style={[styles.emptySubtitle, { color: colors.textSecondary }]}
             >
-              Mulai simpan hidden gems favoritmu{"\n"}dengan menekan ikon 💎
+              Mulai simpan hidden gems favoritmu{"\n"}dengan menekan ikon
               pada tempat kuliner
             </Text>
             <TouchableOpacity

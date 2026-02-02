@@ -10,7 +10,14 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated, {
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  useAnimatedScrollHandler,
+  interpolate,
+  Extrapolation,
+} from "react-native-reanimated";
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
@@ -33,6 +40,34 @@ export default function SettingsScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme ?? "light"];
   const isDark = scheme === "dark";
+  const HEADER_HEIGHT = 140;
+
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT],
+      [0, -20],
+      Extrapolation.CLAMP,
+    );
+    const opacity = interpolate(
+      scrollY.value,
+      [0, HEADER_HEIGHT / 2],
+      [1, 0.9],
+      Extrapolation.CLAMP,
+    );
+    return {
+      transform: [{ translateY }],
+      opacity,
+    };
+  });
 
   const [notifications, setNotifications] = useState(true);
   const [locationAccess, setLocationAccess] = useState(true);
@@ -63,7 +98,11 @@ export default function SettingsScreen() {
         ]}
       >
         {iconType === "ionicons" ? (
-          <Ionicons name={icon as any} size={22} color={iconColor || colors.primary} />
+          <Ionicons
+            name={icon as any}
+            size={22}
+            color={iconColor || colors.primary}
+          />
         ) : (
           <MaterialCommunityIcons
             name={icon as any}
@@ -73,9 +112,13 @@ export default function SettingsScreen() {
         )}
       </View>
       <View style={styles.settingContent}>
-        <Text style={[styles.settingTitle, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.settingTitle, { color: colors.text }]}>
+          {title}
+        </Text>
         {subtitle && (
-          <Text style={[styles.settingSubtitle, { color: colors.textSecondary }]}>
+          <Text
+            style={[styles.settingSubtitle, { color: colors.textSecondary }]}
+          >
             {subtitle}
           </Text>
         )}
@@ -89,7 +132,11 @@ export default function SettingsScreen() {
         />
       )}
       {type === "arrow" && (
-        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        <Ionicons
+          name="chevron-forward"
+          size={20}
+          color={colors.textSecondary}
+        />
       )}
     </TouchableOpacity>
   );
@@ -99,18 +146,25 @@ export default function SettingsScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <LinearGradient
-        colors={isDark ? [colors.primary, "#CC5500"] : [colors.primary, "#FF8533"]}
-        style={styles.header}
-      >
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pengaturan</Text>
-        <View style={{ width: 40 }} />
-      </LinearGradient>
+      <Animated.View style={[styles.headerWrapper, headerAnimatedStyle]}>
+        <LinearGradient
+          colors={[colors.primary, colors.primary]}
+          style={styles.header}
+        >
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Pengaturan</Text>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
+      </Animated.View>
 
-      <ScrollView
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -144,7 +198,10 @@ export default function SettingsScreen() {
               value={darkMode}
               onToggle={(value) => {
                 setDarkMode(value);
-                Alert.alert("Info", "Perubahan tema akan diterapkan saat restart aplikasi");
+                Alert.alert(
+                  "Info",
+                  "Perubahan tema akan diterapkan saat restart aplikasi",
+                );
               }}
             />
           </View>
@@ -192,10 +249,19 @@ export default function SettingsScreen() {
               subtitle="Bersihkan data sementara"
               type="arrow"
               onPress={() =>
-                Alert.alert("Hapus Cache", "Apakah Anda yakin ingin menghapus cache?", [
-                  { text: "Batal", style: "cancel" },
-                  { text: "Hapus", style: "destructive", onPress: () => Alert.alert("Berhasil", "Cache telah dihapus") },
-                ])
+                Alert.alert(
+                  "Hapus Cache",
+                  "Apakah Anda yakin ingin menghapus cache?",
+                  [
+                    { text: "Batal", style: "cancel" },
+                    {
+                      text: "Hapus",
+                      style: "destructive",
+                      onPress: () =>
+                        Alert.alert("Berhasil", "Cache telah dihapus"),
+                    },
+                  ],
+                )
               }
               iconColor="#EF4444"
             />
@@ -220,13 +286,17 @@ export default function SettingsScreen() {
               icon="document-text-outline"
               title="Syarat & Ketentuan"
               type="arrow"
-              onPress={() => Alert.alert("Info", "Akan membuka halaman Syarat & Ketentuan")}
+              onPress={() =>
+                Alert.alert("Info", "Akan membuka halaman Syarat & Ketentuan")
+              }
             />
             <SettingItem
               icon="lock-closed-outline"
               title="Kebijakan Privasi"
               type="arrow"
-              onPress={() => Alert.alert("Info", "Akan membuka halaman Kebijakan Privasi")}
+              onPress={() =>
+                Alert.alert("Info", "Akan membuka halaman Kebijakan Privasi")
+              }
             />
             <SettingItem
               icon="information-circle-outline"
@@ -239,7 +309,9 @@ export default function SettingsScreen() {
 
         {/* Danger Zone */}
         <Animated.View entering={FadeInUp.delay(500)}>
-          <Text style={[styles.sectionTitle, { color: "#EF4444" }]}>Zona Bahaya</Text>
+          <Text style={[styles.sectionTitle, { color: "#EF4444" }]}>
+            Zona Bahaya
+          </Text>
           <View style={styles.section}>
             <SettingItem
               icon="person-remove-outline"
@@ -253,14 +325,14 @@ export default function SettingsScreen() {
                   [
                     { text: "Batal", style: "cancel" },
                     { text: "Hapus Akun", style: "destructive" },
-                  ]
+                  ],
                 )
               }
               iconColor="#EF4444"
             />
           </View>
         </Animated.View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -269,12 +341,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 30,
     paddingHorizontal: 20,
   },
   backButton: {
@@ -286,12 +365,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
     color: "#FFF",
+    textAlign: "center",
   },
   scrollContent: {
-    padding: 20,
+    paddingTop: 150,
+    paddingHorizontal: 20,
     paddingBottom: 40,
   },
   sectionTitle: {

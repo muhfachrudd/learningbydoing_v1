@@ -317,7 +317,7 @@ export default function MyReviewsScreen() {
       {/* Header with Parallax */}
       <Animated.View style={[styles.headerWrapper, headerAnimatedStyle]}>
         <LinearGradient
-          colors={isDark ? ["#F59E0B", "#D97706"] : ["#F59E0B", "#FBBF24"]}
+          colors={[colors.primary, colors.primary]}
           style={styles.header}
         >
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -355,10 +355,10 @@ export default function MyReviewsScreen() {
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
-              <View style={[styles.statIconWrap, { backgroundColor: "rgba(245,158,11,0.15)" }]}>
-                <Ionicons name="heart" size={20} color="#F59E0B" />
+              <View style={[styles.statIconWrap, { backgroundColor: "rgba(225,29,72,0.15)" }]}>
+                <Ionicons name="heart" size={20} color="#E11D48" />
               </View>
-              <Text style={[styles.statNumber, { color: "#F59E0B" }]}>
+              <Text style={[styles.statNumber, { color: "#E11D48" }]}>
                 {reviews.reduce((sum, r) => sum + r.likes, 0)}
               </Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
@@ -367,10 +367,10 @@ export default function MyReviewsScreen() {
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
-              <View style={[styles.statIconWrap, { backgroundColor: "rgba(16,185,129,0.15)" }]}>
-                <MaterialCommunityIcons name="diamond-stone" size={20} color="#10B981" />
+              <View style={[styles.statIconWrap, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
+                <MaterialCommunityIcons name="diamond-stone" size={20} color="#FFD700" />
               </View>
-              <Text style={[styles.statNumber, { color: "#10B981" }]}>
+              <Text style={[styles.statNumber, { color: "#FFD700" }]}>
                 {reviews.filter((r) => r.isHiddenGem).length}
               </Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>

@@ -466,9 +466,7 @@ export default function HomeScreen() {
         {/* ================= HEADER ================= */}
         <Animated.View style={[styles.header, headerAnimatedStyle]}>
           <LinearGradient
-            colors={
-              isDark ? [colors.primary, "#0D9488"] : [colors.primary, "#14B8A6"]
-            }
+            colors={[colors.primary, colors.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.headerGradient}
