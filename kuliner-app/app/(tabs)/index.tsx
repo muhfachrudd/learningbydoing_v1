@@ -46,7 +46,7 @@ import { DUMMY_VENDORS, DUMMY_CUISINES } from "@/services/dummyData";
 
 const USE_DUMMY_DATA = true;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const HEADER_HEIGHT = 280;
+const HEADER_HEIGHT = 220
 
 /* ================= COMPONENT ================= */
 
@@ -453,7 +453,10 @@ export default function HomeScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{
+          paddingTop: HEADER_HEIGHT + 10,
+          paddingBottom: 100,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -463,114 +466,6 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* ================= HEADER ================= */}
-        <Animated.View style={[styles.header, headerAnimatedStyle]}>
-          <LinearGradient
-            colors={[colors.primary, colors.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.headerGradient}
-          >
-            {/* Decorative Elements - Wrapped to avoid Reanimated transform conflict */}
-            <View style={styles.decorCircle1}>
-              <Animated.View
-                style={[
-                  StyleSheet.absoluteFill,
-                  decorCircle1Style,
-                  {
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    borderRadius: 100,
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.decorCircle2}>
-              <Animated.View
-                style={[
-                  StyleSheet.absoluteFill,
-                  decorCircle2Style,
-                  {
-                    backgroundColor: "rgba(255,255,255,0.08)",
-                    borderRadius: 60,
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.decorCircle3} />
-
-            <Animated.View
-              entering={FadeInDown.delay(100).springify()}
-              style={styles.headerTop}
-            >
-              <View style={styles.headerLeft}>
-                <Text style={styles.greeting}>Hidden Gems Finder</Text>
-                <Text style={styles.title}>Temukan kuliner tersembunyi</Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.profileBtn}
-                onPress={() => router.push("/profile")}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={["#FFF", "#F5F5F5"]}
-                  style={styles.profileBtnInner}
-                >
-                  {user?.avatar ? (
-                    <Image
-                      source={{ uri: user.avatar }}
-                      style={styles.profileAvatar}
-                    />
-                  ) : (
-                    <FontAwesome name="user" size={18} color={colors.primary} />
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-
-            {/* Search Box */}
-            <Animated.View
-              entering={FadeInUp.delay(200).springify()}
-              style={[styles.searchContainer, searchBoxAnimatedStyle]}
-            >
-              <View
-                style={[
-                  styles.searchBox,
-                  {
-                    backgroundColor: isDark ? colors.surface : "#FFF",
-                    borderColor: searchFocused ? colors.primary : "transparent",
-                    borderWidth: 2,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="search"
-                  size={20}
-                  color={searchFocused ? colors.primary : colors.textSecondary}
-                />
-                <TextInput
-                  placeholder="Cari restoran, makanan..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  onFocus={handleSearchFocus}
-                  onBlur={handleSearchBlur}
-                  style={[styles.searchInput, { color: colors.text }]}
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery("")}>
-                    <Ionicons
-                      name="close-circle"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </Animated.View>
-          </LinearGradient>
-        </Animated.View>
-
         {/* ================= CATEGORIES ================= */}
         <Animated.FlatList
           horizontal
@@ -681,6 +576,117 @@ export default function HomeScreen() {
           </Animated.View>
         )}
       </Animated.ScrollView>
+
+      {/* ================= HEADER ================= */}
+      <Animated.View
+        style={[styles.headerContainer, headerAnimatedStyle]}
+        pointerEvents="box-none"
+      >
+        <LinearGradient
+          colors={[colors.primary, colors.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          {/* Decorative Elements - Wrapped to avoid Reanimated transform conflict */}
+          <View style={styles.decorCircle1}>
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                decorCircle1Style,
+                {
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  borderRadius: 100,
+                },
+              ]}
+            />
+          </View>
+          <View style={styles.decorCircle2}>
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                decorCircle2Style,
+                {
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                  borderRadius: 60,
+                },
+              ]}
+            />
+          </View>
+          <View style={styles.decorCircle3} />
+
+          <Animated.View
+            entering={FadeInDown.delay(100).springify()}
+            style={styles.headerTop}
+          >
+            <View style={styles.headerLeft}>
+              <Text style={styles.greeting}>Hidden Gems Finder</Text>
+              <Text style={styles.title}>Temukan kuliner tersembunyi</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.profileBtn}
+              onPress={() => router.push("/profile")}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={["#FFF", "#F5F5F5"]}
+                style={styles.profileBtnInner}
+              >
+                {user?.avatar ? (
+                  <Image
+                    source={{ uri: user.avatar }}
+                    style={styles.profileAvatar}
+                  />
+                ) : (
+                  <FontAwesome name="user" size={18} color={colors.primary} />
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Search Box */}
+          <Animated.View
+            entering={FadeInUp.delay(200).springify()}
+            style={[styles.searchContainer, searchBoxAnimatedStyle]}
+          >
+            <View
+              style={[
+                styles.searchBox,
+                {
+                  backgroundColor: isDark ? colors.surface : "#FFF",
+                  borderColor: searchFocused ? colors.primary : "transparent",
+                  borderWidth: 2,
+                },
+              ]}
+            >
+              <Ionicons
+                name="search"
+                size={20}
+                color={searchFocused ? colors.primary : colors.textSecondary}
+              />
+              <TextInput
+                placeholder="Cari restoran, makanan..."
+                placeholderTextColor={colors.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+                style={[styles.searchInput, { color: colors.text }]}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery("")}>
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </Animated.View>
+        </LinearGradient>
+      </Animated.View>
     </View>
   );
 }
@@ -705,8 +711,12 @@ const styles = StyleSheet.create({
   },
 
   /* Header */
-  header: {
-    marginBottom: 8,
+  headerContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
 
   headerGradient: {

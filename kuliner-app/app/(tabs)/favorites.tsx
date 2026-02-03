@@ -38,7 +38,7 @@ import { useColorScheme } from "@/components/useColorScheme";
 import { favoriteService, Favorite } from "@/services/apiServices";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const HEADER_HEIGHT = 180;
+const HEADER_HEIGHT = 120;
 
 export default function FavoritesScreen() {
   const router = useRouter();
@@ -298,7 +298,10 @@ export default function FavoritesScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{
+          paddingTop: 0,
+          paddingBottom: 100,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -308,51 +311,10 @@ export default function FavoritesScreen() {
           />
         }
       >
-        {/* ================= HEADER ================= */}
-        <Animated.View style={[styles.header, headerAnimatedStyle]}>
-          <LinearGradient
-            colors={[colors.primary, colors.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.headerGradient}
-          >
-            {/* Decorative Elements - Wrapped in View to avoid Reanimated transform conflict */}
-            <View style={styles.decorCircle1}>
-              <Animated.View
-                style={[
-                  StyleSheet.absoluteFill,
-                  decorCircle1Style,
-                  {
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    borderRadius: 70,
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.decorCircle2}>
-              <Animated.View
-                style={[
-                  StyleSheet.absoluteFill,
-                  decorCircle2Style,
-                  {
-                    backgroundColor: "rgba(255,255,255,0.08)",
-                    borderRadius: 50,
-                  },
-                ]}
-              />
-            </View>
-
-            <Animated.View entering={FadeInDown.delay(100).springify()}>
-              <View style={styles.headerTitleWrap}>
-                <MaterialCommunityIcons name="diamond" size={24} color="#FFF" />
-                <Text style={styles.headerTitle}>Gems Tersimpan</Text>
-              </View>
-              <Text style={styles.headerSubtitle}>
-                {favorites.length} hidden gems favoritmu
-              </Text>
-            </Animated.View>
-          </LinearGradient>
-        </Animated.View>
+        {/* Spacer for absolute header */}
+        <View
+          style={{ height: HEADER_HEIGHT + 20, backgroundColor: "transparent" }}
+        />
 
         {/* ================= CONTENT ================= */}
         {favorites.length > 0 && (
@@ -397,8 +359,8 @@ export default function FavoritesScreen() {
             <Text
               style={[styles.emptySubtitle, { color: colors.textSecondary }]}
             >
-              Mulai simpan hidden gems favoritmu{"\n"}dengan menekan ikon
-              pada tempat kuliner
+              Mulai simpan hidden gems favoritmu{"\n"}dengan menekan ikon pada
+              tempat kuliner
             </Text>
             <TouchableOpacity
               style={[styles.exploreBtn, { backgroundColor: colors.primary }]}
@@ -411,6 +373,55 @@ export default function FavoritesScreen() {
           </Animated.View>
         )}
       </Animated.ScrollView>
+
+      {/* ================= HEADER ================= */}
+      <Animated.View
+        style={[styles.headerContainer, headerAnimatedStyle]}
+        pointerEvents="box-none"
+      >
+        <LinearGradient
+          colors={[colors.primary, colors.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          {/* Decorative Elements - Wrapped in View to avoid Reanimated transform conflict */}
+          <View style={styles.decorCircle1}>
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                decorCircle1Style,
+                {
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  borderRadius: 70,
+                },
+              ]}
+            />
+          </View>
+          <View style={styles.decorCircle2}>
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                decorCircle2Style,
+                {
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                  borderRadius: 50,
+                },
+              ]}
+            />
+          </View>
+
+          <Animated.View entering={FadeInDown.delay(100).springify()}>
+            <View style={styles.headerTitleWrap}>
+              <MaterialCommunityIcons name="diamond" size={24} color="#FFF" />
+              <Text style={styles.headerTitle}>Gems Tersimpan</Text>
+            </View>
+            <Text style={styles.headerSubtitle}>
+              {favorites.length} hidden gems favoritmu
+            </Text>
+          </Animated.View>
+        </LinearGradient>
+      </Animated.View>
     </View>
   );
 }
@@ -438,8 +449,12 @@ const styles = StyleSheet.create({
   },
 
   /* Header */
-  header: {
-    marginBottom: 8,
+  headerContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
 
   headerGradient: {

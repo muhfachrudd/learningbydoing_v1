@@ -40,7 +40,7 @@ const USE_DUMMY_DATA = true;
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - 52) / 2;
-const HEADER_HEIGHT = 200;
+const HEADER_HEIGHT = 195;
 
 export default function VendorsScreen() {
   const router = useRouter();
@@ -270,7 +270,10 @@ export default function VendorsScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{
+          paddingTop: 0, // Header is absolute, so we need padding in the first item or use contentContainerStyle
+          paddingBottom: 100,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -280,97 +283,10 @@ export default function VendorsScreen() {
           />
         }
       >
-        {/* ================= HEADER ================= */}
-        <Animated.View style={[styles.header, headerAnimatedStyle]}>
-          <LinearGradient
-            colors={[colors.primary, colors.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.headerGradient}
-          >
-            {/* Decorative Elements - Wrapped to avoid Reanimated transform conflict */}
-            <View style={styles.decorCircle1}>
-              <Animated.View
-                style={[
-                  StyleSheet.absoluteFill,
-                  decorCircle1Style,
-                  {
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    borderRadius: 80,
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.decorCircle2}>
-              <Animated.View
-                style={[
-                  StyleSheet.absoluteFill,
-                  decorCircle2Style,
-                  {
-                    backgroundColor: "rgba(255,255,255,0.08)",
-                    borderRadius: 50,
-                  },
-                ]}
-              />
-            </View>
-
-            <Animated.View entering={FadeInDown.delay(100).springify()}>
-              <View style={styles.headerTitleWrap}>
-                <MaterialCommunityIcons
-                  name="map-marker-radius"
-                  size={28}
-                  color="#FFF"
-                />
-                <Text style={styles.headerTitle}>Jelajahi Tempat</Text>
-              </View>
-              <Text style={styles.headerSubtitle}>
-                {vendors.filter((v) => v.is_hidden_gem).length} Hidden Gems dari{" "}
-                {vendors.length} tempat
-              </Text>
-            </Animated.View>
-
-            {/* Search Box */}
-            <Animated.View
-              entering={FadeInUp.delay(200).springify()}
-              style={[styles.searchContainer, searchBoxAnimatedStyle]}
-            >
-              <View
-                style={[
-                  styles.searchBox,
-                  {
-                    backgroundColor: isDark ? colors.surface : "#FFF",
-                    borderColor: searchFocused ? "#10B981" : "transparent",
-                    borderWidth: 2,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="search"
-                  size={20}
-                  color={searchFocused ? "#10B981" : colors.textSecondary}
-                />
-                <TextInput
-                  placeholder="Cari restoran..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={search}
-                  onChangeText={setSearch}
-                  onFocus={handleSearchFocus}
-                  onBlur={handleSearchBlur}
-                  style={[styles.searchInput, { color: colors.text }]}
-                />
-                {search.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearch("")}>
-                    <Ionicons
-                      name="close-circle"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </Animated.View>
-          </LinearGradient>
-        </Animated.View>
+        {/* Added Spacer for absolute header */}
+        <View
+          style={{ height: HEADER_HEIGHT + 20, backgroundColor: "transparent" }}
+        />
 
         {/* ================= FILTER & GRID ================= */}
         <Animated.View entering={FadeInUp.delay(300).springify()}>
@@ -440,6 +356,101 @@ export default function VendorsScreen() {
           </Animated.View>
         )}
       </Animated.ScrollView>
+
+      {/* ================= HEADER ================= */}
+      <Animated.View
+        style={[styles.headerContainer, headerAnimatedStyle]}
+        pointerEvents="box-none"
+      >
+        <LinearGradient
+          colors={[colors.primary, colors.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          {/* Decorative Elements - Wrapped to avoid Reanimated transform conflict */}
+          <View style={styles.decorCircle1}>
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                decorCircle1Style,
+                {
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  borderRadius: 80,
+                },
+              ]}
+            />
+          </View>
+          <View style={styles.decorCircle2}>
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                decorCircle2Style,
+                {
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                  borderRadius: 50,
+                },
+              ]}
+            />
+          </View>
+
+          <Animated.View entering={FadeInDown.delay(100).springify()}>
+            <View style={styles.headerTitleWrap}>
+              <MaterialCommunityIcons
+                name="map-marker-radius"
+                size={28}
+                color="#FFF"
+              />
+              <Text style={styles.headerTitle}>Jelajahi Tempat</Text>
+            </View>
+            <Text style={styles.headerSubtitle}>
+              {vendors.filter((v) => v.is_hidden_gem).length} Hidden Gems dari{" "}
+              {vendors.length} tempat
+            </Text>
+          </Animated.View>
+
+          {/* Search Box */}
+          <Animated.View
+            entering={FadeInUp.delay(200).springify()}
+            style={[styles.searchContainer, searchBoxAnimatedStyle]}
+          >
+            <View
+              style={[
+                styles.searchBox,
+                {
+                  backgroundColor: isDark ? colors.surface : "#FFF",
+                  borderColor: searchFocused ? "#10B981" : "transparent",
+                  borderWidth: 2,
+                },
+              ]}
+            >
+              <Ionicons
+                name="search"
+                size={20}
+                color={searchFocused ? "#10B981" : colors.textSecondary}
+              />
+              <TextInput
+                placeholder="Cari restoran..."
+                placeholderTextColor={colors.textSecondary}
+                value={search}
+                onChangeText={setSearch}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+                style={[styles.searchInput, { color: colors.text }]}
+              />
+              {search.length > 0 && (
+                <TouchableOpacity onPress={() => setSearch("")}>
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </Animated.View>
+        </LinearGradient>
+      </Animated.View>
     </View>
   );
 }
@@ -467,8 +478,12 @@ const styles = StyleSheet.create({
   },
 
   /* Header */
-  header: {
-    marginBottom: 8,
+  headerContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
 
   headerGradient: {
