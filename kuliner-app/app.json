@@ -4,12 +4,12 @@
     "slug": "kuliner-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo-apk.jpg",
+    "icon": "./assets/images/logo-apk.png",
     "scheme": "kulinerapp",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/logo.jpg",
+      "image": "./assets/images/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo-apk.jpg",
+        "foregroundImage": "./assets/images/logo-apk.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
