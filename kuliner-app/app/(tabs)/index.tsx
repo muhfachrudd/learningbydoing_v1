@@ -46,10 +46,9 @@ import { DUMMY_VENDORS, DUMMY_CUISINES } from "@/services/dummyData";
 
 const USE_DUMMY_DATA = true;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-// Platform-specific header height for consistent spacing
 const STATUS_BAR_HEIGHT =
   Platform.OS === "android" ? StatusBar.currentHeight || 24 : 44;
-const HEADER_HEIGHT = Platform.OS === "android" ? 220 : 240;
+const HEADER_HEIGHT = 215;
 
 /* ================= COMPONENT ================= */
 
@@ -617,10 +616,8 @@ export default function HomeScreen() {
           </View>
           <View style={styles.decorCircle3} />
 
-          <Animated.View
-            entering={FadeInDown.delay(100).springify()}
-            style={styles.headerTop}
-          >
+          {/* Header content - removed entering to avoid conflict with parent transform */}
+          <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <Text style={styles.greeting}>Hidden Gems Finder</Text>
               <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
@@ -647,13 +644,10 @@ export default function HomeScreen() {
                 )}
               </LinearGradient>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
 
-          {/* Search Box */}
-          <Animated.View
-            entering={FadeInUp.delay(200).springify()}
-            style={[styles.searchContainer, searchBoxAnimatedStyle]}
-          >
+          {/* Search Box - removed entering animation */}
+          <View style={[styles.searchContainer, searchBoxAnimatedStyle]}>
             <View
               style={[
                 styles.searchBox,
@@ -688,7 +682,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          </Animated.View>
+          </View>
         </LinearGradient>
       </Animated.View>
     </View>
@@ -772,6 +766,7 @@ const styles = StyleSheet.create({
 
   headerLeft: {
     flex: 1,
+    marginRight: 12,
   },
 
   greeting: {
@@ -781,7 +776,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: Platform.OS === "android" ? 20 : 24,
+    fontSize: 22,
     fontWeight: "600",
     color: "#FFF",
     letterSpacing: -0.5,

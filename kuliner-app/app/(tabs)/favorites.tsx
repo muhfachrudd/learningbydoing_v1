@@ -410,7 +410,8 @@ export default function FavoritesScreen() {
             />
           </View>
 
-          <Animated.View entering={FadeInDown.delay(100).springify()}>
+          {/* Header content - removed entering to avoid conflict with parent transform */}
+          <View>
             <View style={styles.headerTitleWrap}>
               <MaterialCommunityIcons name="diamond" size={24} color="#FFF" />
               <Text style={styles.headerTitle}>Gems Tersimpan</Text>
@@ -418,7 +419,7 @@ export default function FavoritesScreen() {
             <Text style={styles.headerSubtitle}>
               {favorites.length} hidden gems favoritmu
             </Text>
-          </Animated.View>
+          </View>
         </LinearGradient>
       </Animated.View>
     </View>

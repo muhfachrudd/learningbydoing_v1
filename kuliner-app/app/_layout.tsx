@@ -82,16 +82,26 @@ function RootLayoutNav() {
   const isReady = !isLoading && splashAnimationDone;
 
   // Handle navigation after everything is ready
+  // Users can now browse without logging in
+  // Only redirect to login when accessing protected routes (like profile actions)
   useEffect(() => {
     if (!isReady) return;
 
     const inAuthGroup = segments[0] === "auth";
+    const inProfileGroup = segments[0] === "profile";
 
-    if (!isLoggedIn && !inAuthGroup) {
-      router.replace("/auth/login");
-    } else if (isLoggedIn && inAuthGroup) {
+    // If user is logged in and in auth screens, redirect to home
+    if (isLoggedIn && inAuthGroup) {
       router.replace("/(tabs)");
     }
+
+    // If user is NOT logged in and tries to access profile screens, redirect to login
+    if (!isLoggedIn && inProfileGroup) {
+      router.replace("/auth/login");
+    }
+
+    // Note: We no longer force login for home/browse screens
+    // Users can explore the app without logging in
   }, [isLoggedIn, isReady, segments]);
 
   // Show splash until both animation is done AND auth is ready

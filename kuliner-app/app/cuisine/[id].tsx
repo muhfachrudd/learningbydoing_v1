@@ -78,16 +78,9 @@ const CuisineDetailScreen = () => {
   });
 
   const contentAnimatedStyle = useAnimatedStyle(() => {
-    // Only content moves up with parallax
-    const translateY = interpolate(
-      scrollY.value,
-      [0, HEADER_HEIGHT / 2],
-      [0, -20],
-      Extrapolation.CLAMP,
-    );
-    return {
-      transform: [{ translateY }],
-    };
+    // Removed transform to avoid Reanimated warning about
+    // layout animations overwriting transform
+    return {};
   });
 
   const fetchReviews = async () => {
@@ -1045,8 +1038,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     paddingBottom: 34,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopWidth: 0,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -1054,8 +1046,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,

@@ -79,18 +79,31 @@ export function Text(props: TextProps) {
   const { style, lightColor, darkColor, fontWeight, ...otherProps } = props;
   const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
 
-  // Extract fontWeight from style if present
+  // Extract fontWeight and fontSize from style if present
   const styleArray = Array.isArray(style) ? style : [style];
   let extractedWeight: FontWeight | undefined = fontWeight;
+  let extractedFontSize: number | undefined;
 
-  // Check styles for fontWeight
+  // Check styles for fontWeight and fontSize
   styleArray.forEach((s) => {
-    if (s && typeof s === "object" && "fontWeight" in s) {
-      extractedWeight = (s as TextStyle).fontWeight as FontWeight;
+    if (s && typeof s === "object") {
+      if ("fontWeight" in s) {
+        extractedWeight = (s as TextStyle).fontWeight as FontWeight;
+      }
+      if ("fontSize" in s) {
+        extractedFontSize = (s as TextStyle).fontSize as number;
+      }
     }
   });
 
   const fontFamily = getFontFamily(extractedWeight);
+
+  // Scale font size slightly smaller on Android (0.95x) to match iOS rendering
+  const androidFontScale = 0.95;
+  const scaledFontSize =
+    extractedFontSize && Platform.OS === "android"
+      ? extractedFontSize * androidFontScale
+      : extractedFontSize;
 
   return (
     <DefaultText
@@ -106,7 +119,13 @@ export function Text(props: TextProps) {
         },
         style,
         // Override fontWeight on Android to prevent double-weighting
-        Platform.OS === "android" ? { fontWeight: "normal" as FontWeight } : {},
+        // Also apply scaled font size on Android
+        Platform.OS === "android"
+          ? {
+              fontWeight: "normal" as FontWeight,
+              ...(scaledFontSize ? { fontSize: scaledFontSize } : {}),
+            }
+          : {},
       ]}
       {...otherProps}
     />

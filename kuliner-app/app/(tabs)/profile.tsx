@@ -258,6 +258,90 @@ export default function ProfileScreen() {
     );
   }
 
+  // Show login prompt for guest users
+  if (!isLoggedIn) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor="transparent"
+          translucent
+        />
+        <LinearGradient
+          colors={[colors.primary, colors.primary]}
+          style={styles.guestHeader}
+        >
+          <View style={styles.guestAvatarPlaceholder}>
+            <FontAwesome name="user" size={40} color={colors.primary} />
+          </View>
+          <Text style={styles.guestTitle}>Selamat Datang!</Text>
+          <Text style={styles.guestSubtitle}>
+            Login untuk melihat profil dan menikmati fitur lengkap
+          </Text>
+        </LinearGradient>
+
+        <View style={styles.guestContent}>
+          <TouchableOpacity
+            style={[styles.guestLoginBtn, { backgroundColor: colors.primary }]}
+            onPress={() => router.push("/auth/login")}
+          >
+            <FontAwesome name="sign-in" size={20} color="#FFF" />
+            <Text style={styles.guestLoginText}>Masuk</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.guestRegisterBtn, { borderColor: colors.primary }]}
+            onPress={() => router.push("/auth/register")}
+          >
+            <FontAwesome name="user-plus" size={18} color={colors.primary} />
+            <Text style={[styles.guestRegisterText, { color: colors.primary }]}>
+              Daftar Akun Baru
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.guestDivider}>
+            <View
+              style={[
+                styles.guestDividerLine,
+                { backgroundColor: colors.border },
+              ]}
+            />
+            <Text
+              style={[styles.guestDividerText, { color: colors.textSecondary }]}
+            >
+              atau
+            </Text>
+            <View
+              style={[
+                styles.guestDividerLine,
+                { backgroundColor: colors.border },
+              ]}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.guestExploreBtn,
+              { backgroundColor: isDark ? colors.surface : "#F5F5F5" },
+            ]}
+            onPress={() => router.push("/(tabs)")}
+          >
+            <Ionicons
+              name="compass-outline"
+              size={22}
+              color={colors.textSecondary}
+            />
+            <Text
+              style={[styles.guestExploreText, { color: colors.textSecondary }]}
+            >
+              Jelajahi Tanpa Login
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   const menuItems: MenuItemProps[] = [
     {
       icon: "edit",
@@ -361,24 +445,11 @@ export default function ProfileScreen() {
             </View>
           </Animated.View>
 
-          {/* User Info */}
+          {/* User Info - Removed entering from children since parent has transform */}
           <Animated.View style={[styles.userInfo, nameAnimatedStyle]}>
-            <Animated.Text
-              entering={FadeInUp.delay(400)}
-              style={styles.userName}
-            >
-              {user?.name}
-            </Animated.Text>
-            <Animated.Text
-              entering={FadeInUp.delay(500)}
-              style={styles.userEmail}
-            >
-              {user?.email}
-            </Animated.Text>
-            <Animated.View
-              entering={FadeInUp.delay(600)}
-              style={styles.joinedBadge}
-            >
+            <Text style={styles.userName}>{user?.name}</Text>
+            <Text style={styles.userEmail}>{user?.email}</Text>
+            <View style={styles.joinedBadge}>
               <Ionicons
                 name="calendar-outline"
                 size={12}
@@ -387,7 +458,7 @@ export default function ProfileScreen() {
               <Text style={styles.joinedText}>
                 Bergabung {formatDate(user!.created_at)}
               </Text>
-            </Animated.View>
+            </View>
           </Animated.View>
         </LinearGradient>
       </Animated.View>
@@ -923,5 +994,107 @@ const styles = StyleSheet.create({
 
   footerText: {
     fontSize: 12,
+  },
+
+  /* Guest User Styles */
+  guestHeader: {
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 40 : 80,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+
+  guestAvatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#FFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  guestTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#FFF",
+    marginBottom: 8,
+  },
+
+  guestSubtitle: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.9)",
+    textAlign: "center",
+  },
+
+  guestContent: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+  },
+
+  guestLoginBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 14,
+    gap: 10,
+    marginBottom: 12,
+  },
+
+  guestLoginText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+
+  guestRegisterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    gap: 10,
+    marginBottom: 24,
+  },
+
+  guestRegisterText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  guestDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+
+  guestDividerLine: {
+    flex: 1,
+    height: 1,
+  },
+
+  guestDividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+  },
+
+  guestExploreBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 14,
+    gap: 10,
+  },
+
+  guestExploreText: {
+    fontSize: 15,
+    fontWeight: "500",
   },
 });

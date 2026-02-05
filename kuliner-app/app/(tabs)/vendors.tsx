@@ -393,7 +393,8 @@ export default function VendorsScreen() {
             />
           </View>
 
-          <Animated.View entering={FadeInDown.delay(100).springify()}>
+          {/* Header content - removed entering to avoid conflict with parent transform */}
+          <View>
             <View style={styles.headerTitleWrap}>
               <MaterialCommunityIcons
                 name="map-marker-radius"
@@ -406,13 +407,10 @@ export default function VendorsScreen() {
               {vendors.filter((v) => v.is_hidden_gem).length} Hidden Gems dari{" "}
               {vendors.length} tempat
             </Text>
-          </Animated.View>
+          </View>
 
-          {/* Search Box */}
-          <Animated.View
-            entering={FadeInUp.delay(200).springify()}
-            style={[styles.searchContainer, searchBoxAnimatedStyle]}
-          >
+          {/* Search Box - removed entering animation */}
+          <View style={[styles.searchContainer, searchBoxAnimatedStyle]}>
             <View
               style={[
                 styles.searchBox,
@@ -447,7 +445,7 @@ export default function VendorsScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          </Animated.View>
+          </View>
         </LinearGradient>
       </Animated.View>
     </View>
