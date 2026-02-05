@@ -58,6 +58,7 @@ export default function VendorDetailScreen() {
   const scrollViewRef = useRef<any>(null);
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const isDark = colorScheme === "dark";
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
@@ -288,7 +289,12 @@ export default function VendorDetailScreen() {
               </Text>
               <View style={styles.badgeRow}>
                 {vendor.is_hidden_gem && (
-                  <View style={styles.hiddenGemBadge}>
+                  <View
+                    style={[
+                      styles.hiddenGemBadge,
+                      { backgroundColor: colors.surfaceSecondary },
+                    ]}
+                  >
                     <MaterialCommunityIcons
                       name="diamond-stone"
                       size={12}
@@ -297,7 +303,12 @@ export default function VendorDetailScreen() {
                     <Text style={styles.hiddenGemText}>Hidden Gem</Text>
                   </View>
                 )}
-                <View style={styles.categoryBadge}>
+                <View
+                  style={[
+                    styles.categoryBadge,
+                    { backgroundColor: colors.surfaceSecondary },
+                  ]}
+                >
                   <MaterialCommunityIcons
                     name="silverware-fork-knife"
                     size={12}
@@ -312,7 +323,17 @@ export default function VendorDetailScreen() {
               </View>
             </View>
 
-            <View style={styles.openBadge}>
+            <View
+              style={[
+                styles.openBadge,
+                {
+                  backgroundColor:
+                    colorScheme === "dark"
+                      ? "rgba(16, 185, 129, 0.15)"
+                      : "#D1FAE5",
+                },
+              ]}
+            >
               <View style={styles.openDot} />
               <Text style={styles.openText}>Buka</Text>
             </View>
@@ -323,7 +344,7 @@ export default function VendorDetailScreen() {
             style={[
               styles.statsRow,
               {
-                backgroundColor: colorScheme === "dark" ? "#1F2937" : "#F8F9FA",
+                backgroundColor: colors.surface,
               },
             ]}
           >
@@ -339,7 +360,9 @@ export default function VendorDetailScreen() {
               </Text>
             </View>
 
-            <View style={styles.statDivider} />
+            <View
+              style={[styles.statDivider, { backgroundColor: colors.border }]}
+            />
 
             <View style={styles.statItem}>
               <Ionicons
@@ -352,7 +375,9 @@ export default function VendorDetailScreen() {
               </Text>
             </View>
 
-            <View style={styles.statDivider} />
+            <View
+              style={[styles.statDivider, { backgroundColor: colors.border }]}
+            />
 
             <View style={styles.statItem}>
               <MaterialCommunityIcons
@@ -407,8 +432,7 @@ export default function VendorDetailScreen() {
               style={[
                 styles.infoCard,
                 {
-                  backgroundColor:
-                    colorScheme === "dark" ? "#1F2937" : "#F8F9FA",
+                  backgroundColor: colors.surface,
                 },
               ]}
             >
@@ -417,8 +441,7 @@ export default function VendorDetailScreen() {
                   style={[
                     styles.infoIconContainer,
                     {
-                      backgroundColor:
-                        colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                      backgroundColor: colors.surfaceSecondary,
                     },
                   ]}
                 >
@@ -440,15 +463,16 @@ export default function VendorDetailScreen() {
                 </View>
               </View>
 
-              <View style={styles.infoDivider} />
+              <View
+                style={[styles.infoDivider, { backgroundColor: colors.border }]}
+              />
 
               <View style={styles.infoRow}>
                 <View
                   style={[
                     styles.infoIconContainer,
                     {
-                      backgroundColor:
-                        colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                      backgroundColor: colors.surfaceSecondary,
                     },
                   ]}
                 >
@@ -472,14 +496,18 @@ export default function VendorDetailScreen() {
 
               {vendor.contact && (
                 <>
-                  <View style={styles.infoDivider} />
+                  <View
+                    style={[
+                      styles.infoDivider,
+                      { backgroundColor: colors.border },
+                    ]}
+                  />
                   <View style={styles.infoRow}>
                     <View
                       style={[
                         styles.infoIconContainer,
                         {
-                          backgroundColor:
-                            colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                          backgroundColor: colors.surfaceSecondary,
                         },
                       ]}
                     >
@@ -545,8 +573,7 @@ export default function VendorDetailScreen() {
                       style={[
                         styles.menuCard,
                         {
-                          backgroundColor:
-                            colorScheme === "dark" ? "#1F2937" : "#FFF",
+                          backgroundColor: colors.surface,
                         },
                       ]}
                       onPress={() => router.push(`/cuisine/${item.id}` as any)}
@@ -562,8 +589,7 @@ export default function VendorDetailScreen() {
                             styles.menuImage,
                             styles.menuPlaceholder,
                             {
-                              backgroundColor:
-                                colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                              backgroundColor: colors.surfaceSecondary,
                             },
                           ]}
                         >
@@ -601,7 +627,12 @@ export default function VendorDetailScreen() {
                 ))}
               </RNScrollView>
             ) : (
-              <View style={styles.emptyMenu}>
+              <View
+                style={[
+                  styles.emptyMenu,
+                  { backgroundColor: colors.surfaceSecondary },
+                ]}
+              >
                 <MaterialCommunityIcons
                   name="food-off"
                   size={40}
@@ -625,7 +656,10 @@ export default function VendorDetailScreen() {
 
       <Animated.View
         entering={FadeInUp.delay(600)}
-        style={[styles.bottomBar, { backgroundColor: colors.background }]}
+        style={[
+          styles.bottomBar,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
       >
         <TouchableOpacity
           style={[styles.favButton, isFavorite && styles.favButtonActive]}
@@ -743,7 +777,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   vendorName: {
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: "800",
     marginBottom: 8,
     letterSpacing: -0.5,
@@ -757,7 +791,6 @@ const styles = StyleSheet.create({
   hiddenGemBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF3C7",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -841,12 +874,11 @@ const styles = StyleSheet.create({
   actionBtnText: { fontSize: 14, fontWeight: "600", color: "#FFF" },
   actionBtnTextOutline: { fontSize: 14, fontWeight: "600" },
   infoSection: { marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: "700" },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
   },
   seeAllText: { fontSize: 14, fontWeight: "600" },
   infoCard: { borderRadius: 16, padding: 16 },
@@ -901,7 +933,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     paddingBottom: 34,
-    borderTopWidth: 0,
+    borderTopWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 15,
     flexDirection: "row",
     alignItems: "center",
   },

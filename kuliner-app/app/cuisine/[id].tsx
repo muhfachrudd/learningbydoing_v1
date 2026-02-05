@@ -54,6 +54,7 @@ const CuisineDetailScreen = () => {
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const isDark = colorScheme === "dark";
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -71,15 +72,12 @@ const CuisineDetailScreen = () => {
   });
 
   const headerAnimatedStyle = useAnimatedStyle(() => {
-    // Keep header image completely static - no movement
     return {
       opacity: 1,
     };
   });
 
   const contentAnimatedStyle = useAnimatedStyle(() => {
-    // Removed transform to avoid Reanimated warning about
-    // layout animations overwriting transform
     return {};
   });
 
@@ -383,7 +381,9 @@ const CuisineDetailScreen = () => {
             contentAnimatedStyle,
           ]}
         >
-          <View style={styles.indicatorPill} />
+          <View
+            style={[styles.indicatorPill, { backgroundColor: colors.border }]}
+          />
 
           {/* Title Row */}
           <Animated.View entering={FadeInUp.delay(100)} style={styles.titleRow}>
@@ -392,7 +392,10 @@ const CuisineDetailScreen = () => {
                 {cuisine.name}
               </Text>
               <TouchableOpacity
-                style={styles.vendorBadge}
+                style={[
+                  styles.vendorBadge,
+                  { backgroundColor: colors.surfaceSecondary },
+                ]}
                 onPress={() =>
                   router.push(`/vendor/${cuisine.vendor_id || 1}` as any)
                 }
@@ -409,8 +412,22 @@ const CuisineDetailScreen = () => {
                 </Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.priceBadge}>
-              <Text style={styles.priceText}>
+            <View
+              style={[
+                styles.priceBadge,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(255, 107, 0, 0.15)"
+                    : "#ff80001a",
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.priceText,
+                  { color: isDark ? "#FFA366" : "#FF6B00" },
+                ]}
+              >
                 Rp {cuisine.price.toLocaleString("id-ID")}
               </Text>
             </View>
@@ -422,7 +439,8 @@ const CuisineDetailScreen = () => {
             style={[
               styles.statsRow,
               {
-                backgroundColor: colorScheme === "dark" ? "#1F2937" : "#F8F9FA",
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
               },
             ]}
           >
@@ -436,7 +454,9 @@ const CuisineDetailScreen = () => {
               </Text>
             </View>
 
-            <View style={styles.statDivider} />
+            <View
+              style={[styles.statDivider, { backgroundColor: colors.border }]}
+            />
 
             <View style={styles.statItem}>
               <Ionicons
@@ -449,7 +469,9 @@ const CuisineDetailScreen = () => {
               </Text>
             </View>
 
-            <View style={styles.statDivider} />
+            <View
+              style={[styles.statDivider, { backgroundColor: colors.border }]}
+            />
 
             <View style={styles.statItem}>
               <MaterialCommunityIcons
@@ -469,8 +491,7 @@ const CuisineDetailScreen = () => {
               style={[
                 styles.tag,
                 {
-                  backgroundColor:
-                    colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                  backgroundColor: colors.surfaceSecondary,
                 },
               ]}
             >
@@ -487,8 +508,7 @@ const CuisineDetailScreen = () => {
               style={[
                 styles.tag,
                 {
-                  backgroundColor:
-                    colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                  backgroundColor: colors.surfaceSecondary,
                 },
               ]}
             >
@@ -505,8 +525,7 @@ const CuisineDetailScreen = () => {
               style={[
                 styles.tag,
                 {
-                  backgroundColor:
-                    colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                  backgroundColor: colors.surfaceSecondary,
                 },
               ]}
             >
@@ -533,8 +552,7 @@ const CuisineDetailScreen = () => {
               style={[
                 styles.descriptionCard,
                 {
-                  backgroundColor:
-                    colorScheme === "dark" ? "#1F2937" : "#F9FAFB",
+                  backgroundColor: colors.surface,
                 },
               ]}
             >
@@ -557,7 +575,7 @@ const CuisineDetailScreen = () => {
               style={[
                 styles.addReviewCard,
                 {
-                  backgroundColor: colorScheme === "dark" ? "#1F2937" : "#FFF",
+                  backgroundColor: colors.surface,
                 },
               ]}
             >
@@ -580,8 +598,7 @@ const CuisineDetailScreen = () => {
                 style={[
                   styles.reviewInput,
                   {
-                    backgroundColor:
-                      colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                    backgroundColor: colors.surfaceSecondary,
                     color: colors.text,
                   },
                 ]}
@@ -631,10 +648,7 @@ const CuisineDetailScreen = () => {
                 style={[
                   styles.reviewCard,
                   {
-                    backgroundColor:
-                      colorScheme === "dark" ? "#1F2937" : "#FFF",
-                    borderWidth: 1,
-                    borderColor: colorScheme === "dark" ? "#374151" : "#E5E7EB",
+                    backgroundColor: colors.surface,
                   },
                 ]}
               >
@@ -643,8 +657,7 @@ const CuisineDetailScreen = () => {
                     style={[
                       styles.avatarCircle,
                       {
-                        backgroundColor:
-                          colorScheme === "dark" ? "#374151" : "#F3F4F6",
+                        backgroundColor: colors.surfaceSecondary,
                       },
                     ]}
                   >
@@ -688,7 +701,13 @@ const CuisineDetailScreen = () => {
       {/* Floating Bottom Action Bar */}
       <Animated.View
         entering={FadeInUp.delay(600)}
-        style={[styles.bottomBar, { backgroundColor: colors.background }]}
+        style={[
+          styles.bottomBar,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          },
+        ]}
       >
         <TouchableOpacity
           style={[styles.favButton, isFavorite && styles.favButtonActive]}
@@ -837,11 +856,11 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   priceBadge: {
-    backgroundColor: "#FFF5EB",
-    paddingHorizontal: 14,
+    backgroundColor: "#ff80003d",
+    paddingHorizontal: 10,
     paddingVertical: 10,
     borderRadius: 14,
-    shadowColor: "#FF6B00",
+    shadowColor: "#ff6a003b",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -935,8 +954,6 @@ const styles = StyleSheet.create({
   addReviewCard: {
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
   },
   starRatingRow: {
     flexDirection: "row",
@@ -1030,6 +1047,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
+
   bottomBar: {
     position: "absolute",
     bottom: 0,
@@ -1038,10 +1056,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     paddingBottom: 34,
-    borderTopWidth: 0,
+    borderTopWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 1,
     flexDirection: "row",
     alignItems: "center",
   },
+
   favButton: {
     width: 48,
     height: 48,
