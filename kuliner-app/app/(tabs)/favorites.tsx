@@ -34,7 +34,7 @@ import Animated, {
 import { DUMMY_CUISINES } from "@/services/dummyData";
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
-import { useColorScheme } from "@/components/useColorScheme";
+import { useTheme } from "@/utils/ThemeContext";
 import { favoriteService, Favorite } from "@/services/apiServices";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -42,9 +42,8 @@ const HEADER_HEIGHT = 120;
 
 export default function FavoritesScreen() {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const colors = Colors[scheme ?? "light"];
-  const isDark = scheme === "dark";
+  const { colorScheme, isDark } = useTheme();
+  const colors = Colors[colorScheme];
 
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);

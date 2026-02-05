@@ -21,7 +21,7 @@ import Animated, {
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
-import { useColorScheme } from "@/components/useColorScheme";
+import { useTheme } from "@/utils/ThemeContext";
 
 interface SettingItemProps {
   icon: string;
@@ -37,9 +37,8 @@ interface SettingItemProps {
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const colors = Colors[scheme ?? "light"];
-  const isDark = scheme === "dark";
+  const { colorScheme, isDark, setTheme, theme } = useTheme();
+  const colors = Colors[colorScheme];
   const HEADER_HEIGHT = 140;
 
   const scrollY = useSharedValue(0);
@@ -71,7 +70,6 @@ export default function SettingsScreen() {
 
   const [notifications, setNotifications] = useState(true);
   const [locationAccess, setLocationAccess] = useState(true);
-  const [darkMode, setDarkMode] = useState(isDark);
   const [autoPlay, setAutoPlay] = useState(false);
 
   const SettingItem = ({
@@ -193,15 +191,17 @@ export default function SettingsScreen() {
             <SettingItem
               icon="moon-outline"
               title="Mode Gelap"
-              subtitle="Tampilan lebih nyaman di malam hari"
+              subtitle={
+                theme === "system"
+                  ? "Mengikuti pengaturan sistem"
+                  : isDark
+                    ? "Aktif"
+                    : "Nonaktif"
+              }
               type="toggle"
-              value={darkMode}
+              value={isDark}
               onToggle={(value) => {
-                setDarkMode(value);
-                Alert.alert(
-                  "Info",
-                  "Perubahan tema akan diterapkan saat restart aplikasi",
-                );
+                setTheme(value ? "dark" : "light");
               }}
             />
           </View>
@@ -392,8 +392,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   iconContainer: {
     width: 40,

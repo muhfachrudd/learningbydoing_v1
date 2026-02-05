@@ -31,7 +31,7 @@ import Animated, {
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
-import { useColorScheme } from "@/components/useColorScheme";
+import { useTheme } from "@/utils/ThemeContext";
 import {
   vendorService,
   cuisineService,
@@ -56,14 +56,14 @@ export default function VendorDetailScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [menuSectionY, setMenuSectionY] = useState(0);
   const scrollViewRef = useRef<any>(null);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
   const handleViewMenu = () => {
     if (cuisines.length === 0) {
-      Alert.alert('Menu', 'Menu belum tersedia untuk tempat ini.');
+      Alert.alert("Menu", "Menu belum tersedia untuk tempat ini.");
       return;
     }
     // Scroll to menu section
@@ -91,7 +91,7 @@ export default function VendorDetailScreen() {
       scrollY.value,
       [0, HEADER_HEIGHT / 2],
       [0, -20],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     return {
       transform: [{ translateY }],
@@ -250,9 +250,14 @@ export default function VendorDetailScreen() {
         <Ionicons name="arrow-back" size={24} color="#FFF" />
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.shareButton}
-        onPress={() => Alert.alert('Share', `Bagikan ${vendor?.name || 'restoran ini'} ke teman!`)}
+        onPress={() =>
+          Alert.alert(
+            "Share",
+            `Bagikan ${vendor?.name || "restoran ini"} ke teman!`,
+          )
+        }
       >
         <Ionicons name="share-social-outline" size={22} color="#FFF" />
       </TouchableOpacity>
@@ -305,7 +310,9 @@ export default function VendorDetailScreen() {
                     size={12}
                     color={colors.primary}
                   />
-                  <Text style={[styles.categoryText, { color: colors.primary }]}>
+                  <Text
+                    style={[styles.categoryText, { color: colors.primary }]}
+                  >
                     Restoran
                   </Text>
                 </View>
@@ -511,13 +518,19 @@ export default function VendorDetailScreen() {
           <Animated.View
             entering={FadeInUp.delay(500)}
             style={styles.menuSection}
-            onLayout={(event) => setMenuSectionY(event.nativeEvent.layout.y + HEADER_HEIGHT - 40)}
+            onLayout={(event) =>
+              setMenuSectionY(event.nativeEvent.layout.y + HEADER_HEIGHT - 40)
+            }
           >
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Menu Populer
               </Text>
-              <TouchableOpacity onPress={() => Alert.alert('Menu', 'Fitur lihat semua menu segera hadir!')}>
+              <TouchableOpacity
+                onPress={() =>
+                  Alert.alert("Menu", "Fitur lihat semua menu segera hadir!")
+                }
+              >
                 <Text style={[styles.seeAllText, { color: colors.primary }]}>
                   Lihat Semua
                 </Text>

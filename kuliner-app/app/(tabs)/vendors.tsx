@@ -32,7 +32,7 @@ import Animated, {
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
-import { useColorScheme } from "@/components/useColorScheme";
+import { useTheme } from "@/utils/ThemeContext";
 import { vendorService, Vendor } from "@/services/apiServices";
 import { dummyService } from "@/services/dummyData";
 
@@ -44,9 +44,8 @@ const HEADER_HEIGHT = 195;
 
 export default function VendorsScreen() {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const colors = Colors[scheme ?? "light"];
-  const isDark = scheme === "dark";
+  const { colorScheme, isDark } = useTheme();
+  const colors = Colors[colorScheme];
 
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);

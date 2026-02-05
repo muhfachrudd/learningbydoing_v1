@@ -31,7 +31,7 @@ import Animated, {
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
-import { useColorScheme } from "@/components/useColorScheme";
+import { useTheme } from "@/utils/ThemeContext";
 import { useAuth } from "@/utils/AuthContext";
 
 import {
@@ -46,16 +46,18 @@ import { DUMMY_VENDORS, DUMMY_CUISINES } from "@/services/dummyData";
 
 const USE_DUMMY_DATA = true;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const HEADER_HEIGHT = 220
+// Platform-specific header height for consistent spacing
+const STATUS_BAR_HEIGHT =
+  Platform.OS === "android" ? StatusBar.currentHeight || 24 : 44;
+const HEADER_HEIGHT = Platform.OS === "android" ? 220 : 240;
 
 /* ================= COMPONENT ================= */
 
 export default function HomeScreen() {
   const router = useRouter();
-  const scheme = useColorScheme();
+  const { colorScheme, isDark } = useTheme();
   const { user } = useAuth();
-  const colors = Colors[scheme ?? "light"];
-  const isDark = scheme === "dark";
+  const colors = Colors[colorScheme];
 
   /* ================= STATE ================= */
 
@@ -621,7 +623,9 @@ export default function HomeScreen() {
           >
             <View style={styles.headerLeft}>
               <Text style={styles.greeting}>Hidden Gems Finder</Text>
-              <Text style={styles.title}>Temukan kuliner tersembunyi</Text>
+              <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+                Temukan kuliner tersembunyi
+              </Text>
             </View>
 
             <TouchableOpacity
@@ -777,8 +781,8 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 24,
-    fontWeight: "800",
+    fontSize: Platform.OS === "android" ? 20 : 24,
+    fontWeight: "600",
     color: "#FFF",
     letterSpacing: -0.5,
   },

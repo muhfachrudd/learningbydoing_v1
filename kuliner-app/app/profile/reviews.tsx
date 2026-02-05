@@ -9,7 +9,11 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
-import { Ionicons, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  FontAwesome,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import Animated, {
@@ -31,7 +35,7 @@ import Animated, {
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
-import { useColorScheme } from "@/components/useColorScheme";
+import { useTheme } from "@/utils/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const HEADER_HEIGHT = 140;
@@ -51,9 +55,11 @@ const DUMMY_REVIEWS: Review[] = [
   {
     id: 1,
     vendorName: "Warung Bu Tini - Nasi Liwet",
-    vendorImage: "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=200",
+    vendorImage:
+      "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=200",
     rating: 5,
-    comment: "Hidden gem banget! Nasi liwetnya juara, bumbu meresap sempurna. Sambelnya juga mantap. Tempatnya memang kecil tapi rasanya juara!",
+    comment:
+      "Hidden gem banget! Nasi liwetnya juara, bumbu meresap sempurna. Sambelnya juga mantap. Tempatnya memang kecil tapi rasanya juara!",
     date: "2 hari lalu",
     likes: 12,
     isHiddenGem: true,
@@ -61,9 +67,11 @@ const DUMMY_REVIEWS: Review[] = [
   {
     id: 2,
     vendorName: "Sate Taichan Pak Ewok",
-    vendorImage: "https://images.unsplash.com/photo-1529563021893-cc83c992d75d?w=200",
+    vendorImage:
+      "https://images.unsplash.com/photo-1529563021893-cc83c992d75d?w=200",
     rating: 4,
-    comment: "Sate taichannya enak, pedasnya pas. Porsinya agak kecil sih tapi worth it!",
+    comment:
+      "Sate taichannya enak, pedasnya pas. Porsinya agak kecil sih tapi worth it!",
     date: "1 minggu lalu",
     likes: 8,
     isHiddenGem: true,
@@ -71,9 +79,11 @@ const DUMMY_REVIEWS: Review[] = [
   {
     id: 3,
     vendorName: "Bakmi Aheng 168",
-    vendorImage: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200",
+    vendorImage:
+      "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200",
     rating: 5,
-    comment: "Best bakmi di Jakarta! Tekstur mienya pas, toppingnya melimpah. Kuahnya juga gurih. Recommended banget!",
+    comment:
+      "Best bakmi di Jakarta! Tekstur mienya pas, toppingnya melimpah. Kuahnya juga gurih. Recommended banget!",
     date: "2 minggu lalu",
     likes: 24,
     isHiddenGem: true,
@@ -81,9 +91,11 @@ const DUMMY_REVIEWS: Review[] = [
   {
     id: 4,
     vendorName: "Soto Betawi Bang Mamat",
-    vendorImage: "https://images.unsplash.com/photo-1547928578-bca6e567b8e3?w=200",
+    vendorImage:
+      "https://images.unsplash.com/photo-1547928578-bca6e567b8e3?w=200",
     rating: 5,
-    comment: "Soto betawi terenak! Kuahnya kental, dagingnya empuk. Wajib coba kalau ke daerah sini.",
+    comment:
+      "Soto betawi terenak! Kuahnya kental, dagingnya empuk. Wajib coba kalau ke daerah sini.",
     date: "3 minggu lalu",
     likes: 18,
     isHiddenGem: true,
@@ -91,22 +103,21 @@ const DUMMY_REVIEWS: Review[] = [
   {
     id: 5,
     vendorName: "Es Cendol Dawet Mbak Sri",
-    vendorImage: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=200",
+    vendorImage:
+      "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=200",
     rating: 4,
-    comment: "Cendolnya seger! Gula merahnya original, bukan yang palsu. Cocok buat siang-siang.",
+    comment:
+      "Cendolnya seger! Gula merahnya original, bukan yang palsu. Cocok buat siang-siang.",
     date: "1 bulan lalu",
     likes: 6,
     isHiddenGem: false,
   },
 ];
 
-
-
 export default function MyReviewsScreen() {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const colors = Colors[scheme ?? "light"];
-  const isDark = scheme === "dark";
+  const { colorScheme, isDark } = useTheme();
+  const colors = Colors[colorScheme];
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,13 +145,13 @@ export default function MyReviewsScreen() {
       scrollY.value,
       [0, HEADER_HEIGHT],
       [0, -20],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     const opacity = interpolate(
       scrollY.value,
       [0, HEADER_HEIGHT / 2],
       [1, 0.9],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     return {
       transform: [{ translateY }],
@@ -153,13 +164,13 @@ export default function MyReviewsScreen() {
       scrollY.value,
       [0, 100],
       [0, -10],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     const scale = interpolate(
       scrollY.value,
       [0, 100],
       [1, 0.95],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     return {
       transform: [{ translateY }, { scale }],
@@ -169,26 +180,30 @@ export default function MyReviewsScreen() {
   const handleLike = (reviewId: number) => {
     if (likedReviews.includes(reviewId)) {
       setLikedReviews(likedReviews.filter((id) => id !== reviewId));
-      setReviews(reviews.map((r) => 
-        r.id === reviewId ? { ...r, likes: r.likes - 1 } : r
-      ));
+      setReviews(
+        reviews.map((r) =>
+          r.id === reviewId ? { ...r, likes: r.likes - 1 } : r,
+        ),
+      );
     } else {
       setLikedReviews([...likedReviews, reviewId]);
-      setReviews(reviews.map((r) => 
-        r.id === reviewId ? { ...r, likes: r.likes + 1 } : r
-      ));
+      setReviews(
+        reviews.map((r) =>
+          r.id === reviewId ? { ...r, likes: r.likes + 1 } : r,
+        ),
+      );
     }
   };
 
   const handleEdit = (review: Review) => {
-    Alert.alert(
-      "Edit Review",
-      `Edit review untuk ${review.vendorName}?`,
-      [
-        { text: "Batal", style: "cancel" },
-        { text: "Edit", onPress: () => Alert.alert("Info", "Fitur edit review akan segera tersedia!") },
-      ]
-    );
+    Alert.alert("Edit Review", `Edit review untuk ${review.vendorName}?`, [
+      { text: "Batal", style: "cancel" },
+      {
+        text: "Edit",
+        onPress: () =>
+          Alert.alert("Info", "Fitur edit review akan segera tersedia!"),
+      },
+    ]);
   };
 
   const handleDelete = (review: Review) => {
@@ -204,7 +219,7 @@ export default function MyReviewsScreen() {
             setReviews(reviews.filter((r) => r.id !== review.id));
           },
         },
-      ]
+      ],
     );
   };
 
@@ -230,7 +245,7 @@ export default function MyReviewsScreen() {
     const handlePressLike = () => {
       likeScale.value = withSequence(
         withSpring(1.3, { damping: 5 }),
-        withSpring(1, { damping: 8 })
+        withSpring(1, { damping: 8 }),
       );
       handleLike(item.id);
     };
@@ -240,7 +255,7 @@ export default function MyReviewsScreen() {
     }));
 
     return (
-      <Animated.View 
+      <Animated.View
         entering={FadeInUp.delay(index * 80)}
         style={styles.cardWrapper}
       >
@@ -249,59 +264,105 @@ export default function MyReviewsScreen() {
           activeOpacity={0.95}
         >
           <View style={styles.cardHeader}>
-            <Image source={{ uri: item.vendorImage }} style={styles.vendorImage} />
+            <Image
+              source={{ uri: item.vendorImage }}
+              style={styles.vendorImage}
+            />
             <View style={styles.vendorInfo}>
               <View style={styles.nameRow}>
-                <Text style={[styles.vendorName, { color: colors.text }]} numberOfLines={1}>
+                <Text
+                  style={[styles.vendorName, { color: colors.text }]}
+                  numberOfLines={1}
+                >
                   {item.vendorName}
                 </Text>
                 {item.isHiddenGem && (
                   <View style={styles.gemBadge}>
-                    <MaterialCommunityIcons name="diamond-stone" size={12} color="#FFD700" />
+                    <MaterialCommunityIcons
+                      name="diamond-stone"
+                      size={12}
+                      color="#FFD700"
+                    />
                   </View>
                 )}
               </View>
               <View style={styles.metaRow}>
                 {renderStars(item.rating, 0)}
-                <Text style={[styles.dateText, { color: colors.textSecondary }]}>
+                <Text
+                  style={[styles.dateText, { color: colors.textSecondary }]}
+                >
                   • {item.date}
                 </Text>
               </View>
             </View>
           </View>
 
-          <Text style={[styles.commentText, { color: colors.text }]}>{item.comment}</Text>
+          <Text style={[styles.commentText, { color: colors.text }]}>
+            {item.comment}
+          </Text>
 
-          <View style={[styles.cardFooter, { borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
-            <TouchableOpacity style={styles.likeBtn} onPress={handlePressLike} activeOpacity={0.7}>
+          <View
+            style={[
+              styles.cardFooter,
+              {
+                borderTopColor: isDark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+              },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.likeBtn}
+              onPress={handlePressLike}
+              activeOpacity={0.7}
+            >
               <Animated.View style={likeAnimatedStyle}>
-                <Ionicons 
-                  name={isLiked ? "heart" : "heart-outline"} 
-                  size={20} 
-                  color={isLiked ? "#EF4444" : colors.textSecondary} 
+                <Ionicons
+                  name={isLiked ? "heart" : "heart-outline"}
+                  size={20}
+                  color={isLiked ? "#EF4444" : colors.textSecondary}
                 />
               </Animated.View>
-              <Text style={[styles.likeCount, { color: isLiked ? "#EF4444" : colors.textSecondary }]}>
+              <Text
+                style={[
+                  styles.likeCount,
+                  { color: isLiked ? "#EF4444" : colors.textSecondary },
+                ]}
+              >
                 {item.likes}
               </Text>
             </TouchableOpacity>
 
             <View style={styles.actionsRight}>
-              <TouchableOpacity 
-                style={[styles.actionBtn, { backgroundColor: `${colors.primary}15` }]}
+              <TouchableOpacity
+                style={[
+                  styles.actionBtn,
+                  { backgroundColor: `${colors.primary}15` },
+                ]}
                 onPress={() => handleEdit(item)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="create-outline" size={16} color={colors.primary} />
-                <Text style={[styles.actionText, { color: colors.primary }]}>Edit</Text>
+                <Ionicons
+                  name="create-outline"
+                  size={16}
+                  color={colors.primary}
+                />
+                <Text style={[styles.actionText, { color: colors.primary }]}>
+                  Edit
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.actionBtn, { backgroundColor: "rgba(239,68,68,0.1)" }]}
+              <TouchableOpacity
+                style={[
+                  styles.actionBtn,
+                  { backgroundColor: "rgba(239,68,68,0.1)" },
+                ]}
                 onPress={() => handleDelete(item)}
                 activeOpacity={0.7}
               >
                 <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                <Text style={[styles.actionText, { color: "#EF4444" }]}>Hapus</Text>
+                <Text style={[styles.actionText, { color: "#EF4444" }]}>
+                  Hapus
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -320,7 +381,10 @@ export default function MyReviewsScreen() {
           colors={[colors.primary, colors.primary]}
           style={styles.header}
         >
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
           <View>
@@ -338,13 +402,22 @@ export default function MyReviewsScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Stats Card */}
-        <Animated.View
-          entering={FadeInUp.delay(200).springify()}
-        >
-          <View style={[styles.statsContainer, { backgroundColor: colors.surface }]}>
+        <Animated.View entering={FadeInUp.delay(200).springify()}>
+          <View
+            style={[styles.statsContainer, { backgroundColor: colors.surface }]}
+          >
             <View style={styles.statItem}>
-              <View style={[styles.statIconWrap, { backgroundColor: `${colors.primary}15` }]}>
-                <Ionicons name="document-text" size={20} color={colors.primary} />
+              <View
+                style={[
+                  styles.statIconWrap,
+                  { backgroundColor: `${colors.primary}15` },
+                ]}
+              >
+                <Ionicons
+                  name="document-text"
+                  size={20}
+                  color={colors.primary}
+                />
               </View>
               <Text style={[styles.statNumber, { color: colors.primary }]}>
                 {reviews.length}
@@ -353,9 +426,16 @@ export default function MyReviewsScreen() {
                 Total Review
               </Text>
             </View>
-            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <View
+              style={[styles.statDivider, { backgroundColor: colors.border }]}
+            />
             <View style={styles.statItem}>
-              <View style={[styles.statIconWrap, { backgroundColor: "rgba(225,29,72,0.15)" }]}>
+              <View
+                style={[
+                  styles.statIconWrap,
+                  { backgroundColor: "rgba(225,29,72,0.15)" },
+                ]}
+              >
                 <Ionicons name="heart" size={20} color="#E11D48" />
               </View>
               <Text style={[styles.statNumber, { color: "#E11D48" }]}>
@@ -365,10 +445,21 @@ export default function MyReviewsScreen() {
                 Total Likes
               </Text>
             </View>
-            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <View
+              style={[styles.statDivider, { backgroundColor: colors.border }]}
+            />
             <View style={styles.statItem}>
-              <View style={[styles.statIconWrap, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
-                <MaterialCommunityIcons name="diamond-stone" size={20} color="#FFD700" />
+              <View
+                style={[
+                  styles.statIconWrap,
+                  { backgroundColor: "rgba(255,215,0,0.15)" },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="diamond-stone"
+                  size={20}
+                  color="#FFD700"
+                />
               </View>
               <Text style={[styles.statNumber, { color: "#FFD700" }]}>
                 {reviews.filter((r) => r.isHiddenGem).length}
@@ -381,14 +472,16 @@ export default function MyReviewsScreen() {
         </Animated.View>
 
         {/* Section Title */}
-        <Animated.View 
-          entering={FadeInLeft.delay(300).springify()} 
+        <Animated.View
+          entering={FadeInLeft.delay(300).springify()}
           style={styles.sectionHeader}
         >
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Riwayat Review
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+          <Text
+            style={[styles.sectionSubtitle, { color: colors.textSecondary }]}
+          >
             {reviews.length} review telah kamu tulis
           </Text>
         </Animated.View>
@@ -402,11 +495,16 @@ export default function MyReviewsScreen() {
             </Text>
           </View>
         ) : reviews.length === 0 ? (
-          <Animated.View 
+          <Animated.View
             entering={FadeInUp.delay(200).springify()}
             style={styles.emptyContainer}
           >
-            <View style={[styles.emptyIconWrap, { backgroundColor: `${colors.primary}10` }]}>
+            <View
+              style={[
+                styles.emptyIconWrap,
+                { backgroundColor: `${colors.primary}10` },
+              ]}
+            >
               <MaterialCommunityIcons
                 name="comment-text-outline"
                 size={48}
@@ -416,10 +514,12 @@ export default function MyReviewsScreen() {
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
               Belum ada review
             </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.emptySubtitle, { color: colors.textSecondary }]}
+            >
               Bagikan pengalamanmu di hidden gems yang kamu kunjungi
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.emptyButton, { backgroundColor: colors.primary }]}
               onPress={() => router.push("/(tabs)/vendors")}
             >

@@ -33,7 +33,7 @@ import { useRouter } from "expo-router";
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
-import { useColorScheme } from "@/components/useColorScheme";
+import { useTheme } from "@/utils/ThemeContext";
 import { userService, User } from "@/services/apiServices";
 import { useAuth } from "@/utils/AuthContext";
 import type { ComponentProps } from "react";
@@ -63,9 +63,8 @@ const AVATAR_SIZE = 100;
 
 /* ================= COMPONENT ================= */
 export default function ProfileScreen() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme ?? "light"];
-  const isDark = scheme === "dark";
+  const { colorScheme, isDark } = useTheme();
+  const colors = Colors[colorScheme];
   const router = useRouter();
   const { user: authUser, logout, isLoggedIn } = useAuth();
 
@@ -471,7 +470,12 @@ export default function ProfileScreen() {
                 Temukan 5 hidden gems untuk unlock badge ini!
               </Text>
             </View>
-            <View style={styles.achievementProgress}>
+            <View
+              style={[
+                styles.achievementProgress,
+                { backgroundColor: isDark ? colors.border : "#F3F4F6" },
+              ]}
+            >
               <Text
                 style={[styles.achievementCount, { color: colors.primary }]}
               >
@@ -803,8 +807,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 14,
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
   },
 
   achievementIcon: {
@@ -831,7 +833,6 @@ const styles = StyleSheet.create({
   },
 
   achievementProgress: {
-    backgroundColor: "#F3F4F6",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -857,8 +858,6 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
   },
 
   menuLeft: {

@@ -21,7 +21,7 @@ import Animated, {
 
 import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
-import { useColorScheme } from "@/components/useColorScheme";
+import { useTheme } from "@/utils/ThemeContext";
 
 interface FAQItem {
   id: number;
@@ -70,9 +70,8 @@ const FAQ_DATA: FAQItem[] = [
 
 export default function HelpScreen() {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const colors = Colors[scheme ?? "light"];
-  const isDark = scheme === "dark";
+  const { colorScheme, isDark } = useTheme();
+  const colors = Colors[colorScheme];
   const HEADER_HEIGHT = 140;
 
   const scrollY = useSharedValue(0);
