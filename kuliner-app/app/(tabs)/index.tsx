@@ -528,12 +528,14 @@ export default function HomeScreen() {
             <View style={styles.sectionTitleWrap}>
               <Ionicons name="flame" size={24} color="#F97316" />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Restoran Populer
+                {searchQuery || selectedCategory
+                  ? "Hasil Pencarian"
+                  : "Restoran Populer"}
               </Text>
             </View>
             <TouchableOpacity
               style={styles.seeAllBtn}
-              onPress={() => router.push("/(tabs)/vendors")}
+              onPress={() => router.push("/vendors")}
             >
               <Text style={[styles.seeAllText, { color: colors.primary }]}>
                 Lihat Semua
@@ -548,15 +550,23 @@ export default function HomeScreen() {
           <Text
             style={[styles.sectionSubtitle, { color: colors.textSecondary }]}
           >
-            Restoran dengan ulasan dan rating terbaik
+            {searchQuery || selectedCategory
+              ? `${filteredVendors.length} restoran ditemukan`
+              : "Restoran dengan ulasan dan rating terbaik"}
           </Text>
         </Animated.View>
 
-        {filteredVendors.map((vendor, index) => (
+        {(searchQuery || selectedCategory
+          ? filteredVendors
+          : popularVendors
+        ).map((vendor, index) => (
           <View key={vendor.id}>{renderVendor({ item: vendor, index })}</View>
         ))}
 
-        {filteredVendors.length === 0 && (
+        {(searchQuery || selectedCategory
+          ? filteredVendors
+          : popularVendors
+        ).length === 0 && (
           <Animated.View
             entering={FadeInUp.springify()}
             style={styles.emptyState}
